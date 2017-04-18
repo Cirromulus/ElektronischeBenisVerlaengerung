@@ -68,6 +68,7 @@ int main( int argc, char** argv )
        Mat display;
        cvtColor(src, display, CV_GRAY2BGR);
 
+       cout << endl << "File: " << filename << endl;
 
        Mat canny_output;
        vector<vector<Point> > contours;
@@ -79,10 +80,13 @@ int main( int argc, char** argv )
        /// Find contours
        findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
        for( int i = 0; i< contours.size(); i++ ){
+    	   cout << "Elem: " << i << endl;
     	   vector<Point> approx;
     	   approxPolyDP(Mat(contours[i]), approx, 1, true);
     	   //printf("Found a %zu-shape\n", approx.size());
     	   RotatedRect elem = minAreaRect(approx);
+    	   //todo: check if previous recognized elems exist nearby and just take the bigger one
+
     	   String name;
     	   if(approx.size() < 10){
     		   cout << "Too few corners (" << approx.size() << ")" << endl;
@@ -118,10 +122,6 @@ int main( int argc, char** argv )
     			   //assume circle
     			   name += "Plate";
     			   break;
-    		   case 9:
-    		   case 11:
-				   name += "Fork";
-				   break;
     		   case 2:
     			   cout << "Knife or spoon" << endl;
 
@@ -139,8 +139,12 @@ int main( int argc, char** argv )
     			   }
     			   break;
     		   default:
-    			   name += "Weird";
-    			   name += " " + to_string(defects.size());
+    			   if(defects.size() > 9 && defects.size() < 18){
+    				   name += "Fork";
+    			   }else{
+					   name += "Weird";
+					   name += " " + to_string(defects.size());
+    			   }
     		   }
 
     	   }else{

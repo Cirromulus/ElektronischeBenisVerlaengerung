@@ -32,7 +32,7 @@ class Item {
 };
 
 void draw (Mat& dst, const Item& item) {
-  Scalar color[6] = 
+  Scalar color[] =
     {
       CV_RGB (255, 0, 0), CV_RGB (0, 255, 0), CV_RGB (255, 255, 0), CV_RGB (0, 0, 255), CV_RGB (255, 0, 255), CV_RGB (0, 255, 255)
     };
@@ -49,6 +49,18 @@ void draw (Mat& dst, const Item& item) {
   Point textPos = item.imageRegion.center;
   textPos.x -= textSize.width/2;
   putText (dst, item.name, textPos, FONT_HERSHEY_PLAIN, 2, myColor, 1);
+}
+
+void drawHull(Mat& dst, vector<Point2i> hull){
+	for (int i = 0; i < hull.size(); i++){
+		line(dst, hull[i], hull[(i+1)%hull.size()], CV_RGB (0, 255, 0));
+	}
+}
+
+void drawApprox(Mat& dst, vector<Point> hull){
+	for (int i = 0; i < hull.size(); i++){
+		line(dst, hull[i], hull[(i+1)%hull.size()], CV_RGB (127, 45, 127));
+	}
 }
 
 void draw (Mat& dst, const vector<Item>& items) {
@@ -85,7 +97,8 @@ int main( int argc, char** argv )
        for( int i = 0; i< contours.size(); i++ ){
     	   cout << endl << "Elem: " << i << endl;
     	   vector<Point> approx;
-    	   approxPolyDP(Mat(contours[i]), approx, 1, true);
+    	   approxPolyDP(Mat(contours[i]), approx, 2, true);
+    	   drawApprox(display, approx);
     	   //printf("Found a %zu-shape\n", approx.size());
     	   RotatedRect elem = minAreaRect(approx);
     	   //todo: check if previous recognized elems exist nearby and just take the bigger one
@@ -116,6 +129,8 @@ int main( int argc, char** argv )
     	   cout << "Convex hull: " << hull.size() << endl;
     	   cout << "Convex hullI: " << hullI.size() << endl;
 
+    	   drawHull(display, hull);
+
     	   if(hull.size() > 3){
     		   convexityDefects(approx, hullI, defects);
     		   cout << "Defects: " << defects.size() << endl;
@@ -142,7 +157,7 @@ int main( int argc, char** argv )
     			   }
     			   break;
     		   default:
-    			   if(defects.size() > 8 && defects.size() < 18){
+    			   if(defects.size() > 8 && defects.size() < 20){
     				   name += "Fork";
     			   }else{
 					   name += "Weird";
@@ -160,6 +175,7 @@ int main( int argc, char** argv )
     		   if(abs(item.imageRegion.center.x - elem.center.x) < 20 &&
 				   abs(item.imageRegion.center.y - elem.center.y) < 20){
     			   found = true;
+    			   break;
     		   }
     	   }
     	   if(!found)

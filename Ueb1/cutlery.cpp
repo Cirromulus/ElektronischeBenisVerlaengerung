@@ -74,13 +74,16 @@ int main( int argc, char** argv )
        vector<vector<Point> > contours;
        vector<Vec4i> hierarchy;
        vector<Item> items;
-
+       Mat dummy;
        /// Detect edges using canny
-       Canny(src, canny_output, 100, 255);
+
+       double perfectThresholdBelieveMe = threshold(src, dummy, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+       Canny(src, canny_output, perfectThresholdBelieveMe/2, perfectThresholdBelieveMe);
        /// Find contours
-       findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+       findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );
        for( int i = 0; i< contours.size(); i++ ){
-    	   cout << "Elem: " << i << endl;
+    	   cout << endl << "Elem: " << i << endl;
     	   vector<Point> approx;
     	   approxPolyDP(Mat(contours[i]), approx, 1, true);
     	   //printf("Found a %zu-shape\n", approx.size());
@@ -139,7 +142,7 @@ int main( int argc, char** argv )
     			   }
     			   break;
     		   default:
-    			   if(defects.size() > 9 && defects.size() < 18){
+    			   if(defects.size() > 8 && defects.size() < 18){
     				   name += "Fork";
     			   }else{
 					   name += "Weird";
@@ -152,8 +155,15 @@ int main( int argc, char** argv )
     		   name += "Weird";
     	   }
 
-
-    	   items.push_back(Item(name.c_str(), elem, i));
+    	   bool found = false;
+    	   for (Item &item : items){
+    		   if(abs(item.imageRegion.center.x - elem.center.x) < 20 &&
+				   abs(item.imageRegion.center.y - elem.center.y) < 20){
+    			   found = true;
+    		   }
+    	   }
+    	   if(!found)
+    		   items.push_back(Item(name.c_str(), elem, i));
        }
 
        

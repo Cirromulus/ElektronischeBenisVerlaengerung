@@ -6,6 +6,9 @@
 
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include <stdio.h>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 using namespace cv;
@@ -66,10 +69,89 @@ int main( int argc, char** argv )
        cvtColor(src, display, CV_GRAY2BGR);
 
 
+       Mat canny_output;
+       vector<vector<Point> > contours;
+       vector<Vec4i> hierarchy;
        vector<Item> items;
-// TODO: Implement here code to localize and identify the items on the image
-// Below is dummy code to show, how an item object is generated
-       items.push_back(Item("plate", RotatedRect(Point(500,400),Size(200,100), 45), 0));
+
+       /// Detect edges using canny
+       Canny(src, canny_output, 100, 255);
+       /// Find contours
+       findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+       for( int i = 0; i< contours.size(); i++ ){
+    	   vector<Point> approx;
+    	   approxPolyDP(Mat(contours[i]), approx, 1, true);
+    	   //printf("Found a %zu-shape\n", approx.size());
+    	   RotatedRect elem = minAreaRect(approx);
+    	   String name;
+    	   if(approx.size() < 10){
+    		   cout << "Too few corners (" << approx.size() << ")" << endl;
+    		   continue;
+    	   }
+
+    	   if(elem.size.width < 25 || elem.size.height < 25){
+    		   cout << "Kantenl'nge too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
+			   continue;
+    	   }
+
+    	   if(elem.size.width * elem.size.height < 5000){
+    		   cout << "Area too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
+			   continue;
+    	   }
+
+    	   vector<Point> hull;
+    	   vector<int>   hullI;
+    	   vector<Vec4i> defects;
+
+    	   convexHull(approx, hull);
+    	   convexHull(approx, hullI);
+
+    	   cout << "Convex hull: " << hull.size() << endl;
+    	   cout << "Convex hullI: " << hullI.size() << endl;
+
+    	   if(hull.size() > 3){
+    		   convexityDefects(approx, hullI, defects);
+    		   cout << "Defects: " << defects.size() << endl;
+			   int a = 0, b = 0;
+    		   switch(defects.size()){
+    		   case 0:
+    			   //assume circle
+    			   name += "Plate";
+    			   break;
+    		   case 9:
+    		   case 11:
+				   name += "Fork";
+				   break;
+    		   case 2:
+    			   cout << "Knife or spoon" << endl;
+
+    			   if(elem.size.width > elem.size.height){
+    				   a = elem.size.width;
+					   b = elem.size.height;
+    			   }else{
+    				   b = elem.size.width;
+    				   a = elem.size.height;
+    			   }
+    			   if(a / b > 6){
+    				   name =+ "Knife";
+    			   }else{
+    				   name =+ "Spoon";
+    			   }
+    			   break;
+    		   default:
+    			   name += "Weird";
+    			   name += " " + to_string(defects.size());
+    		   }
+
+    	   }else{
+    		   cout << "no Defects calculateabaele." << endl;
+    		   name += "Weird";
+    	   }
+
+
+    	   items.push_back(Item(name.c_str(), elem, i));
+       }
+
        
        draw (display, items);
        imshow(windowname, display);

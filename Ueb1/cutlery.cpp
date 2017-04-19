@@ -31,11 +31,12 @@ class Item {
   {} 
 };
 
+Scalar color[] =
+  {
+    CV_RGB (255, 0, 0), CV_RGB (0, 255, 0), CV_RGB (255, 255, 0), CV_RGB (0, 0, 255), CV_RGB (255, 0, 255), CV_RGB (0, 255, 255)
+  };
+
 void draw (Mat& dst, const Item& item) {
-  Scalar color[] =
-    {
-      CV_RGB (255, 0, 0), CV_RGB (0, 255, 0), CV_RGB (255, 255, 0), CV_RGB (0, 0, 255), CV_RGB (255, 0, 255), CV_RGB (0, 255, 255)
-    };
   int idx = item.colorIndex%6;
   if (idx<0) idx+=6;
   Scalar myColor = color[idx];
@@ -51,15 +52,15 @@ void draw (Mat& dst, const Item& item) {
   putText (dst, item.name, textPos, FONT_HERSHEY_PLAIN, 2, myColor, 1);
 }
 
-void drawHull(Mat& dst, vector<Point2i> hull){
+void drawHull(Mat& dst, vector<Point2i> hull, int col){
 	for (int i = 0; i < hull.size(); i++){
-		line(dst, hull[i], hull[(i+1)%hull.size()], CV_RGB (0, 255, 0));
+		line(dst, hull[i], hull[(i+1)%hull.size()], color[col%6]);
 	}
 }
 
-void drawApprox(Mat& dst, vector<Point> hull){
+void drawApprox(Mat& dst, vector<Point> hull, int col){
 	for (int i = 0; i < hull.size(); i++){
-		line(dst, hull[i], hull[(i+1)%hull.size()], CV_RGB (127, 45, 127));
+		line(dst, hull[i], hull[(i+1)%hull.size()], color[col%6]);
 	}
 }
 
@@ -98,7 +99,6 @@ int main( int argc, char** argv )
     	   cout << endl << "Elem: " << i << endl;
     	   vector<Point> approx;
     	   approxPolyDP(Mat(contours[i]), approx, 2, true);
-    	   drawApprox(display, approx);
     	   //printf("Found a %zu-shape\n", approx.size());
     	   RotatedRect elem = minAreaRect(approx);
     	   //todo: check if previous recognized elems exist nearby and just take the bigger one
@@ -129,7 +129,8 @@ int main( int argc, char** argv )
     	   cout << "Convex hull: " << hull.size() << endl;
     	   cout << "Convex hullI: " << hullI.size() << endl;
 
-    	   drawHull(display, hull);
+    	   drawApprox(display, approx, i+1);
+    	   drawHull(display, hull, i+2);
 
     	   if(hull.size() > 3){
     		   convexityDefects(approx, hullI, defects);

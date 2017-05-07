@@ -51,6 +51,44 @@ void showScaled (string windowName, Mat& display) {
    imshow (windowName, scaledDisplay);
 }
 
+Scalar color[] =
+  {
+    CV_RGB (255, 0, 0), CV_RGB (0, 255, 0), CV_RGB (255, 255, 0), CV_RGB (0, 0, 255), CV_RGB (255, 0, 255), CV_RGB (0, 255, 255)
+  };
+
+void drawHull(Mat& dst, vector<Point2i> hull, int col){
+	for (int i = 0; i < hull.size(); i++){
+		line(dst, hull[i], hull[(i+1)%hull.size()], color[col%6]);
+	}
+}
+
+void drawApprox(Mat& dst, vector<Point> hull, int col){
+	for (int i = 0; i < hull.size(); i++){
+		line(dst, hull[i], hull[(i+1)%hull.size()], color[col%6]);
+	}
+}
+
+void drawApproxes(Mat& dst, vector<vector<Point>> app){
+	for (int i = 0; i < app.size(); i++){
+		drawApprox(dst, app[i], i);
+	}
+}
+
+void drawRect(Mat& dst, RotatedRect& rec, int i) {
+  Scalar myColor = color[i%6];
+  Point2f vertices[4];
+  rec.points(vertices);
+  for (int i = 0; i < 4; i++)
+    line(dst, vertices[i], vertices[(i+1)%4], myColor, 2);
+}
+
+void drawRects(Mat& dst, vector<RotatedRect>& rects){
+	int i = 0;
+	for(auto rect : rects){
+		drawRect(dst, rect, i++);
+	}
+}
+
 // Draws a cross at p of given size (width=height) and color
 void drawCross (Mat& display, Point p, int size, Scalar color) {
    line (display, Point (p.x-size/2, p.y-size/2), Point (p.x+size/2, p.y+size/2), color, 3);
@@ -109,6 +147,99 @@ ostream& operator<< (std::ostream& stream, const vector<Dice>& dices) {
 //! for debugging reasons
 void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
    // TODO: Implement
+	Mat yellow_bin;
+	Mat canny_output;
+	unsigned char key = 0;
+	unsigned char inc = 10;
+	unsigned char lr = 0x09, lg = 0xA5, lb = 0x6F,
+			hr = 0x6E, hg = 0xFF, hb = 0xFF;
+	//l: 13 A5 BF, h: 50 D0 EB
+	//l: 09 A5 6F, h: 6E F8 FF
+	do{
+		switch(key){
+		case '\n':
+			continue;
+		case '1':
+			inc -= 5;
+			break;
+		case '2':
+			inc += 5;
+			break;
+		case 'w':
+			lr += inc;
+			break;
+		case 's':
+			lr -= inc;
+			break;
+		case 'e':
+			lg += inc;
+			break;
+		case 'd':
+			lg -= inc;
+			break;
+		case 'r':
+			lb += inc;
+			break;
+		case 'f':
+			lb -= inc;
+			break;
+		case 'u':
+			hr += inc;
+			break;
+		case 'j':
+			hr -= inc;
+			break;
+		case 'i':
+			hg += inc;
+			break;
+		case 'k':
+			hg -= inc;
+			break;
+		case 'o':
+			hb += inc;
+			break;
+		case 'l':
+			hb -= inc;
+			break;
+		default:
+			printf("Fucktard\n");
+
+		}
+		printf("s: %d, l: %02X %02X %02X, h: %02X %02X %02X\n", inc, lr, lg, lb, hr, hg, hb);
+		inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
+
+		//Possibility: http://answers.opencv.org/question/46525/rotation-detection-based-on-template-matching/
+		vector<vector<Point> > contours;
+		vector<Vec4i> hierarchy;
+		vector<Point> approx;
+		Canny(yellow_bin, canny_output, 100, 255, 3);
+		findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );
+
+		vector<RotatedRect> possibilities;
+		for(auto contour : contours){
+			vector<Point> approx;
+			approxPolyDP(Mat(contour), approx, 2, true);
+			RotatedRect elem = minAreaRect(approx);
+
+			if(elem.size.width < 80 || elem.size.height < 80){
+			   //cout << "Kantenl'nge too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
+			   continue;
+			}
+
+			//todo: further checking
+
+			possibilities.push_back(elem);
+		}
+
+		cvtColor(yellow_bin, yellow_bin, CV_GRAY2RGB);
+		drawApproxes(display, contours);
+		drawApproxes(yellow_bin, contours);
+		drawRects(display, possibilities);
+		drawRects(yellow_bin, possibilities);
+		showScaled("testnme", yellow_bin);
+		waitKey(500);
+	}while((key = getchar()) != 'q');
+
    dices.clear();
    dices.push_back (Dice(Point(image.cols/2, image.rows/2), 5));
    dices.push_back (Dice(Point(100,100),0));

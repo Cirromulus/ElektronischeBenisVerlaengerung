@@ -6,6 +6,7 @@
 
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/features2d/features2d.hpp"
 #include <algorithm>
 #include <iostream>
 
@@ -62,15 +63,15 @@ void drawHull(Mat& dst, vector<Point2i> hull, int col){
 	}
 }
 
-void drawApprox(Mat& dst, vector<Point> hull, int col){
+void drawApprox(Mat& dst, vector<Point> hull, int col, int size){
 	for (int i = 0; i < hull.size(); i++){
-		line(dst, hull[i], hull[(i+1)%hull.size()], color[col%6]);
+		line(dst, hull[i], hull[(i+1)%hull.size()], color[col%6], size);
 	}
 }
 
-void drawApproxes(Mat& dst, vector<vector<Point>> app){
+void drawApproxes(Mat& dst, vector<vector<Point>> app, int size = 1){
 	for (int i = 0; i < app.size(); i++){
-		drawApprox(dst, app[i], i);
+		drawApprox(dst, app[i], i, size);
 	}
 }
 
@@ -79,7 +80,7 @@ void drawRect(Mat& dst, RotatedRect& rec, int i) {
   Point2f vertices[4];
   rec.points(vertices);
   for (int i = 0; i < 4; i++)
-    line(dst, vertices[i], vertices[(i+1)%4], myColor, 2);
+    line(dst, vertices[i], vertices[(i+1)%4], myColor, 8);
 }
 
 void drawRects(Mat& dst, vector<RotatedRect>& rects){
@@ -93,6 +94,29 @@ void drawRects(Mat& dst, vector<RotatedRect>& rects){
 void drawCross (Mat& display, Point p, int size, Scalar color) {
    line (display, Point (p.x-size/2, p.y-size/2), Point (p.x+size/2, p.y+size/2), color, 3);
    line (display, Point (p.x-size/2, p.y+size/2), Point (p.x+size/2, p.y-size/2), color, 3);
+}
+
+string type2str(int type) {
+  string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch ( depth ) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans+'0');
+
+  return r;
 }
 
 //! Draws a single dice on display
@@ -139,23 +163,58 @@ ostream& operator<< (std::ostream& stream, const vector<Dice>& dices) {
 }
 
 
+Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Point>& approx){
+	Mat bb, M, cropped, rotated;
+
+	Rect br = boundingRect(Mat(approx));
+	cout << br << endl;
+	bb = orig(br);
+
+	float angle = elem.angle;
+	Point2f offs(br.tl().x, br.tl().y);
+	Size rect_size = elem.size;
+	// thanks to http://felix.abecassis.me/2011/10/opencv-rotation-deskewing/
+	if (elem.angle < -45.) {
+		angle += 90.0;
+		swap(rect_size.width, rect_size.height);
+	}
+	// get the rotation matrix
+	M = getRotationMatrix2D(elem.center-offs, angle, 1.0);
+	// perform the affine transformation
+	warpAffine(bb, rotated, M, bb.size(), INTER_CUBIC);
+	// crop the resulting image
+	getRectSubPix(rotated, rect_size, elem.center-offs, cropped);
+
+	//Now we cropped the Dice.
+	//showScaled("F", bb);
+	//showScaled("R", rotated);
+
+	std::vector<KeyPoint> keypoints;
+	d.detect(cropped, keypoints);
+
+	//cout << "Number: " << keypoints.size() << endl;
+	drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+	showScaled("D", cropped);
+	//waitKey(50);
+
+	return Dice(elem.center, keypoints.size());
+}
+
 
 /********** BELOW HERE TODOs ******************************/
 
-//! Recognizes all dices in images and returns them in dices
-//! display is passed, just in case you want to show something
-//! for debugging reasons
-void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
-   // TODO: Implement
+void idea1(Mat& image, Mat& display, vector<Dice>& dices){
 	Mat yellow_bin;
 	Mat canny_output;
 	unsigned char key = 0;
 	unsigned char inc = 10;
-	unsigned char lr = 0x09, lg = 0xA5, lb = 0x6F,
+	unsigned char lr = 0x09, lg = 0xA0, lb = 0x6F,
 			hr = 0x6E, hg = 0xFF, hb = 0xFF;
-	//l: 13 A5 BF, h: 50 D0 EB
-	//l: 09 A5 6F, h: 6E F8 FF
+	unsigned char RETR = CV_RETR_FLOODFILL, CHAIN = CV_CHAIN_APPROX_TC89_KCOS ;
+	int erosion_size = 2;
+	//yellow 09 A0 6F, 6E FF FF
 	do{
+		dices.clear();	//FIXME only for debug
 		switch(key){
 		case '\n':
 			continue;
@@ -201,20 +260,40 @@ void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
 		case 'l':
 			hb -= inc;
 			break;
+		case 'x':
+			erosion_size--;
+			break;
+		case 'c':
+			erosion_size++;
+			break;
 		default:
 			printf("Fucktard\n");
 
 		}
-		printf("s: %d, l: %02X %02X %02X, h: %02X %02X %02X\n", inc, lr, lg, lb, hr, hg, hb);
+		printf("s: %d, l: %02X %02X %02X, h: %02X %02X %02X, erosion: %d\n", inc, lr, lg, lb, hr, hg, hb, erosion_size);
 		inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
+		cvtColor(yellow_bin, yellow_bin, CV_GRAY2RGB);
 
+		Mat element = getStructuringElement( MORPH_CROSS,
+										   Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+										   Point( erosion_size, erosion_size ) );
+
+		Mat erod;
+		yellow_bin.copyTo(erod);
+		/// Apply the erosion operation
+		erode( yellow_bin, erod, element );
 		//Possibility: http://answers.opencv.org/question/46525/rotation-detection-based-on-template-matching/
+		//docs.opencv.org/3.1.0/d3/db4/tutorial_py_watershed.html
 		vector<vector<Point> > contours;
 		vector<Vec4i> hierarchy;
 		vector<Point> approx;
-		Canny(yellow_bin, canny_output, 100, 255, 3);
-		findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );
+		Canny(erod, canny_output, 100, 255, 3);
+		findContours( canny_output, contours, hierarchy, RETR+1, CHAIN+1, Point(0, 0) );
 
+		SimpleBlobDetector::Params params;
+		params.minThreshold = 10;
+		params.maxThreshold = 250;
+		SimpleBlobDetector detector(params);
 		vector<RotatedRect> possibilities;
 		for(auto contour : contours){
 			vector<Point> approx;
@@ -226,23 +305,55 @@ void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
 			   continue;
 			}
 
-			//todo: further checking
+			if(elem.size.width > 140 || elem.size.height > 140){
+			   //cout << "Kantenl'nge too big (" << elem.size.width << "," << elem.size.height << ")" << endl;
+			   continue;
+			}
 
+			//todo: further checking
 			possibilities.push_back(elem);
+			dices.push_back(countBlobs(detector, yellow_bin, elem, approx));
 		}
 
-		cvtColor(yellow_bin, yellow_bin, CV_GRAY2RGB);
-		drawApproxes(display, contours);
-		drawApproxes(yellow_bin, contours);
-		drawRects(display, possibilities);
-		drawRects(yellow_bin, possibilities);
-		showScaled("testnme", yellow_bin);
-		waitKey(500);
-	}while((key = getchar()) != 'q');
+		//drawApproxes(display, contours, 4);
+		drawApproxes(erod, contours, 6);
+		//drawRects(display, possibilities);
+		drawRects(erod, possibilities);
+		showScaled("testnme", erod);
 
-   dices.clear();
-   dices.push_back (Dice(Point(image.cols/2, image.rows/2), 5));
-   dices.push_back (Dice(Point(100,100),0));
+		cout << "Found " << possibilities.size() << " dices." << endl;
+		//waitKey(500);
+	}while(false);//(key = getchar()) != 'q');
+
+}
+
+void idea2(Mat& image, Mat& display, vector<Dice>& dices){
+	Mat yellow_bin;
+	Mat canny_output;
+	unsigned char lr = 0x09, lg = 0x95, lb = 0x6F,
+			hr = 0x6E, hg = 0xFF, hb = 0xFF;
+	inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
+
+	Mat shure_bg;
+	dilate(yellow_bin, shure_bg, Mat(),Point(), 2);
+	Mat dist_transform;
+	distanceTransform(yellow_bin, dist_transform, CV_DIST_L2, 5);
+	Mat shure_fg;
+	double th = threshold(dist_transform, shure_fg, 127, 255, 0);
+	shure_fg.convertTo(shure_fg, CV_8U);
+	cout << type2str(shure_bg.type()) << " " << type2str(shure_fg.type()) << endl;
+	Mat unknown = shure_bg-shure_fg;
+
+	showScaled("Shure fg", shure_fg);
+	showScaled("Shure bg", shure_bg);
+	showScaled("unnoknwd", unknown);
+}
+//! Recognizes all dices in images and returns them in dices
+//! display is passed, just in case you want to show something
+//! for debugging reasons
+void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
+   // TODO: Implement
+	idea1(image, display, dices);
 }
 
 //! Adds a list of recognized dices to statistics

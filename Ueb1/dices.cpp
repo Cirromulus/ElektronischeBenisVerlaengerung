@@ -193,9 +193,9 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	d.detect(cropped, keypoints);
 
 	//cout << "Number: " << keypoints.size() << endl;
-	drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-	showScaled("D", cropped);
-	waitKey(100);
+	//drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+	//showScaled("D", cropped);
+	//waitKey(100);
 
 	return Dice(elem.center, keypoints.size());
 }
@@ -211,7 +211,7 @@ void idea1(Mat& image, Mat& display, vector<Dice>& dices){
 	unsigned char lr = 0x09, lg = 0xA0, lb = 0x6F,
 			hr = 0x6E, hg = 0xFF, hb = 0xFF;
 	unsigned char RETR = CV_RETR_FLOODFILL, CHAIN = CV_CHAIN_APPROX_TC89_KCOS ;
-	int erosion_size = 2;
+	int erosion_size = 1;
 	//yellow 09 A0 6F, 6E FF FF
 	do{
 		dices.clear();	//FIXME only for debug
@@ -317,14 +317,14 @@ void idea1(Mat& image, Mat& display, vector<Dice>& dices){
 		circle(markers, Point(5,5), 3, CV_RGB(255,255,255), -1);
 		// Perform the watershed algorithm
 		watershed(image, markers);
-		Mat mark = Mat::zeros(markers.size(), CV_8UC1);
-		markers.convertTo(mark, CV_8UC1);
-		bitwise_not(mark, mark);
-		showScaled("Markers_v2", mark); // uncomment this if you want to see how the mark
-	                                   // image looks like at that point
+//		Mat mark = Mat::zeros(markers.size(), CV_8UC1);
+//		markers.convertTo(mark, CV_8UC1);
+//		bitwise_not(mark, mark);
+//		showScaled("Markers_v2", mark); // uncomment this if you want to see how the mark
+//	                                   // image looks like at that point
 
 	    // Generate random colors
-		vector<Vec3b> colors;
+/*		vector<Vec3b> colors;
 		for (size_t i = 0; i < contours.size(); i++)
 		{
 			int b = theRNG().uniform(0, 255);
@@ -347,46 +347,34 @@ void idea1(Mat& image, Mat& display, vector<Dice>& dices){
 			}
 		}
 		// Visualize the final image
-		showScaled("Final Result", dst);
+		showScaled("Final Result", dst);*/
 
 
-		/*
-		Mat element = getStructuringElement( MORPH_CROSS,
-										   Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-										   Point( erosion_size, erosion_size ) );
-
-		Mat erod;
-		yellow_bin.copyTo(erod);
-		/// Apply the erosion operation
-		erode( yellow_bin, erod, element );
-		//Possibility: http://answers.opencv.org/question/46525/rotation-detection-based-on-template-matching/
-		//docs.opencv.org/3.1.0/d3/db4/tutorial_py_watershed.html
-		//http://cmm.ensmp.fr/~beucher/wtshed.html
-		vector<vector<Point> > contours;
-		vector<Vec4i> hierarchy;
-		vector<Point> approx;
-		Canny(erod, canny_output, 100, 255, 3);
-		findContours( canny_output, contours, hierarchy, RETR+1, CHAIN+1, Point(0, 0) );
-*/
-
-		/*SimpleBlobDetector::Params params;
+		SimpleBlobDetector::Params params;
 		params.minThreshold = 10;
 		params.maxThreshold = 250;
 		SimpleBlobDetector detector(params);
 		vector<RotatedRect> possibilities;
-		for(auto contour : contours){
-			vector<Point> approx;
-			approxPolyDP(Mat(contour), approx, 2, true);
-			RotatedRect elem = minAreaRect(approx);
+		for(int i = 1; i <= contours.size(); i++){
+			Mat singleElem = markers == i;
+			vector<vector<Point>> singleDiceContours;
+			vector<Point> singleDiceContour;
+			findContours(singleElem, singleDiceContours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+			if(singleDiceContours.size() > 1){
+				cout << "single Dice was seen as multiple elems: " << singleDiceContours.size() << endl;
+			}
+			singleDiceContour = singleDiceContours[0];
+			RotatedRect elem = minAreaRect(singleDiceContour);
 
 			if(elem.size.width < 80 || elem.size.height < 80){
-			   //cout << "Kantenl'nge too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
+			   cout << "Kantenl'nge too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
 			   continue;
 			}
 
-			if(elem.size.width > 140 || elem.size.height > 140){
-			   //cout << "Kantenl'nge too big (" << elem.size.width << "," << elem.size.height << ")" << endl;
-			   continue;
+			if(elem.size.width > 165 || elem.size.height > 165){
+			   cout << "Kantenl'nge too big (" << elem.size.width << "," << elem.size.height << ")" << endl;
+			   //continue;
 			}
 
 			//todo: further checking
@@ -408,17 +396,18 @@ void idea1(Mat& image, Mat& display, vector<Dice>& dices){
 			elem.size += Size2f(2*erosion_size,2*erosion_size);
 
 			possibilities.push_back(elem);
-			//dices.push_back(countBlobs(detector, yellow_bin, elem, approx));
+			dices.push_back(countBlobs(detector, yellow_bin, elem, singleDiceContour));
+			drawApprox(yellow_bin, singleDiceContour, i, 4);
 		}
 
 		cvtColor(yellow_bin, yellow_bin, CV_GRAY2RGB);
 		//drawApproxes(display, contours, 4);
-		drawApproxes(erod, contours, 6);
+		//drawApproxes(yellow_bin, contours, 6);
 		//drawRects(display, possibilities);
-		drawRects(erod, possibilities);
-		showScaled("testnme", erod);
+		drawRects(yellow_bin, possibilities);
+		showScaled("testnme", yellow_bin);
 
-		cout << "Found " << possibilities.size() << " dices." << endl;*/
+		cout << "Found " << possibilities.size() << " dices." << endl;
 		waitKey();
 	}while(false);//(key = getchar()) != 'q');
 

@@ -192,6 +192,9 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	std::vector<KeyPoint> keypoints;
 	d.detect(cropped, keypoints);
 
+	if(keypoints.size() == 0 || keypoints.size() > 6){
+		cout << "Could not detect correctly at " << elem.center << endl;
+	}
 	//cout << "Number: " << keypoints.size() << endl;
 	//drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 	//showScaled("D", cropped);
@@ -408,8 +411,8 @@ void idea1(Mat& image, Mat& display, vector<Dice>& dices){
 		showScaled("testnme", yellow_bin);
 
 		cout << "Found " << possibilities.size() << " dices." << endl;
-		waitKey();
-	}while(false);//(key = getchar()) != 'q');
+		waitKey(500);
+	}while((key = getchar()) != 'q');
 
 }
 

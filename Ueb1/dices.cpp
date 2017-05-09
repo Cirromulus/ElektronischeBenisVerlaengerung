@@ -219,21 +219,21 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	bitwise_not(im_floodfill, im_floodfill_inv);
 
 	// Combine the two images to get the foreground.
-	Mat im_out = (binImage | im_floodfill_inv);
+	Mat filled = (binImage | im_floodfill_inv);
 	// Perform the distance transform algorithm
 	//http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
 
-	//showScaled("Filled", im_out);
+	showScaled("Filled", filled);
 
 	Mat dist;
-	distanceTransform(im_out, dist, CV_DIST_L2, 3);
+	distanceTransform(filled, dist, CV_DIST_L2, 3);
 
 	normalize(dist, dist, 0, 1., NORM_MINMAX);
 	//showScaled("Distance Transform Image", dist);
 
 	// Threshold to obtain the peaks
 	// This will be the markers for the foreground objects
-	threshold(dist, dist, .88, 1., CV_THRESH_BINARY);
+	threshold(dist, dist, .83, 1., CV_THRESH_BINARY);
 	// Dilate a bit the dist image
 	Mat kernel1 = Mat::ones(3, 3, CV_8UC1);
 	dilate(dist, dist, kernel1);
@@ -253,19 +253,51 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	// Draw the background marker
 	circle(markers, Point(5,5), 3, CV_RGB(255,255,255), -1);
 	// Perform the watershed algorithm
-	cvtColor(binImage, binImage, CV_GRAY2RGB);
-	watershed(binImage, markers);
+	cvtColor(filled, filled, CV_GRAY2RGB);
+	watershed(filled, markers);
 
+    Mat mark = Mat::zeros(markers.size(), CV_8UC1);
+    markers.convertTo(mark, CV_8UC1);
+    bitwise_not(mark, mark);
+//    imshow("Markers_v2", mark); // uncomment this if you want to see how the mark
+                                  // image looks like at that point
+    // Generate random colors
+    vector<Vec3b> colors;
+    for (size_t i = 0; i < contours.size(); i++)
+    {
+        int b = theRNG().uniform(0, 255);
+        int g = theRNG().uniform(0, 255);
+        int r = theRNG().uniform(0, 255);
+        colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
+    }
+    // Create the result image
+    Mat dst = Mat::zeros(markers.size(), CV_8UC3);
+    // Fill labeled objects with random colors
+    for (int i = 0; i < markers.rows; i++)
+    {
+        for (int j = 0; j < markers.cols; j++)
+        {
+            int index = markers.at<int>(i,j);
+            if (index > 0 && index <= static_cast<int>(contours.size()))
+                dst.at<Vec3b>(i,j) = colors[index-1];
+            else
+                dst.at<Vec3b>(i,j) = Vec3b(0,0,0);
+        }
+    }
+    // Visualize the final image
+    showScaled("Final Result", dst);
 
 	SimpleBlobDetector::Params params;
 	params.minThreshold = 5;
 	params.maxThreshold = 255;
 	SimpleBlobDetector detector(params);
 	vector<RotatedRect> possibilities;
+	cvtColor(binImage, binImage, CV_GRAY2RGB);
 	for(int i = 1; i <= contours.size(); i++){
 		Mat singleElem = markers == i;
 		vector<vector<Point>> singleDiceContours;
 		vector<Point> singleDiceContour;
+		drawApprox(binImage, singleDiceContour, i, 4);
 		findContours(singleElem, singleDiceContours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
 		if(singleDiceContours.size() > 1){
@@ -288,7 +320,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 
 		bool nah = false;
 		for(RotatedRect possibility : possibilities){
-			if(norm(possibility.center-elem.center) < 40){
+			if(norm(possibility.center-elem.center) < 30){
 				nah = true;
 				break;
 			}
@@ -304,12 +336,11 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 
 		possibilities.push_back(elem);
 		dices.push_back(countBlobs(detector, binImage, elem, singleDiceContour));
-		drawApprox(binImage, singleDiceContour, i, 4);
 	}
 	//drawApproxes(display, contours, 4);
 	//drawApproxes(yellow_bin, contours, 6);
 	//drawRects(display, possibilities);
-	drawRects(binImage, possibilities);
+	//drawRects(binImage, possibilities);
 
 	cout << "Found " << possibilities.size() << " dices." << endl;
 }

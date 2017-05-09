@@ -169,6 +169,7 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	Rect br = boundingRect(Mat(approx));
 	cout << br << endl;
 	bb = orig(br);
+	int dilatation_size = 3;
 
 	float angle = elem.angle;
 	Point2f offs(br.tl().x, br.tl().y);
@@ -186,8 +187,13 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	getRectSubPix(rotated, rect_size, elem.center-offs, cropped);
 
 	//Now we cropped the Dice.
-	//showScaled("F", bb);
-	//showScaled("R", rotated);
+
+	//try connecting circles
+	/// Apply the dilation operation
+	dilate( cropped, cropped, getStructuringElement( MORPH_ELLIPSE,
+            Size( 2*dilatation_size + 1, 2*dilatation_size+1 ),
+            Point( dilatation_size, dilatation_size ) )
+			);
 
 	std::vector<KeyPoint> keypoints;
 	d.detect(cropped, keypoints);
@@ -198,21 +204,125 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	//cout << "Number: " << keypoints.size() << endl;
 	//drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 	//showScaled("D", cropped);
-	//waitKey(100);
+	//waitKey();
 
 	return Dice(elem.center, keypoints.size());
 }
 
+void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& erosion_size){
+	// Floodfill from point (0, 0)
+	Mat im_floodfill = binImage.clone();
+	floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
+
+	// Invert floodfilled image
+	Mat im_floodfill_inv;
+	bitwise_not(im_floodfill, im_floodfill_inv);
+
+	// Combine the two images to get the foreground.
+	Mat im_out = (binImage | im_floodfill_inv);
+	// Perform the distance transform algorithm
+	//http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
+
+	//showScaled("Filled", im_out);
+
+	Mat dist;
+	distanceTransform(im_out, dist, CV_DIST_L2, 3);
+
+	normalize(dist, dist, 0, 1., NORM_MINMAX);
+	//showScaled("Distance Transform Image", dist);
+
+	// Threshold to obtain the peaks
+	// This will be the markers for the foreground objects
+	threshold(dist, dist, .88, 1., CV_THRESH_BINARY);
+	// Dilate a bit the dist image
+	Mat kernel1 = Mat::ones(3, 3, CV_8UC1);
+	dilate(dist, dist, kernel1);
+	showScaled("Peaks", dist);
+	// Create the CV_8U version of the distance image
+	// It is needed for findContours()
+	Mat dist_8u;
+	dist.convertTo(dist_8u, CV_8U);
+	// Find total markers
+	vector<vector<Point> > contours;
+	findContours(dist_8u, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+	// Create the marker image for the watershed algorithm
+	Mat markers = Mat::zeros(dist.size(), CV_32SC1);
+	// Draw the foreground markers
+	for (size_t i = 0; i < contours.size(); i++)
+	 drawContours(markers, contours, static_cast<int>(i), Scalar::all(static_cast<int>(i)+1), -1);
+	// Draw the background marker
+	circle(markers, Point(5,5), 3, CV_RGB(255,255,255), -1);
+	// Perform the watershed algorithm
+	cvtColor(binImage, binImage, CV_GRAY2RGB);
+	watershed(binImage, markers);
+
+
+	SimpleBlobDetector::Params params;
+	params.minThreshold = 5;
+	params.maxThreshold = 255;
+	SimpleBlobDetector detector(params);
+	vector<RotatedRect> possibilities;
+	for(int i = 1; i <= contours.size(); i++){
+		Mat singleElem = markers == i;
+		vector<vector<Point>> singleDiceContours;
+		vector<Point> singleDiceContour;
+		findContours(singleElem, singleDiceContours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+		if(singleDiceContours.size() > 1){
+			cout << "single Dice was seen as multiple elems: " << singleDiceContours.size() << endl;
+		}
+		singleDiceContour = singleDiceContours[0];
+		RotatedRect elem = minAreaRect(singleDiceContour);
+
+		if(elem.size.width < 80 || elem.size.height < 80){
+		   cout << "Kantenl'nge too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
+		   continue;
+		}
+
+		if(elem.size.width > 168 || elem.size.height > 168){
+		   cout << "Kantenl'nge too big (" << elem.size.width << "," << elem.size.height << ")" << endl;
+		   continue;
+		}
+
+		//todo: further checking
+
+		bool nah = false;
+		for(RotatedRect possibility : possibilities){
+			if(norm(possibility.center-elem.center) < 40){
+				nah = true;
+				break;
+			}
+		}
+		if(nah){
+			cout << "too close to another found dice" << endl;
+			continue;
+		}
+
+		//Nachbearbeitung
+		elem.center -= Point2f(erosion_size,erosion_size);
+		elem.size += Size2f(2*erosion_size,2*erosion_size);
+
+		possibilities.push_back(elem);
+		dices.push_back(countBlobs(detector, binImage, elem, singleDiceContour));
+		drawApprox(binImage, singleDiceContour, i, 4);
+	}
+	//drawApproxes(display, contours, 4);
+	//drawApproxes(yellow_bin, contours, 6);
+	//drawRects(display, possibilities);
+	drawRects(binImage, possibilities);
+
+	cout << "Found " << possibilities.size() << " dices." << endl;
+}
 
 /********** BELOW HERE TODOs ******************************/
 
-void idea1(Mat& image, Mat& display, vector<Dice>& dices){
+void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 	Mat yellow_bin;
 	Mat canny_output;
 	unsigned char key = 0;
 	unsigned char inc = 10;
-	unsigned char lr = 0x09, lg = 0xA0, lb = 0x6F,
-			hr = 0x6E, hg = 0xFF, hb = 0xFF;
+	unsigned char lr = 0x1D, lg = 0x80, lb = 0x92,
+			hr = 0x78, hg = 0xFF, hb = 0xFF;
 	unsigned char RETR = CV_RETR_FLOODFILL, CHAIN = CV_CHAIN_APPROX_TC89_KCOS ;
 	int erosion_size = 1;
 	//yellow 09 A0 6F, 6E FF FF
@@ -275,142 +385,12 @@ void idea1(Mat& image, Mat& display, vector<Dice>& dices){
 		}
 		printf("s: %d, l: %02X %02X %02X, h: %02X %02X %02X, erosion: %d\n", inc, lr, lg, lb, hr, hg, hb, erosion_size);
 		inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
-
-	    // Floodfill from point (0, 0)
-	    Mat im_floodfill = yellow_bin.clone();
-	    floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
-
-	    // Invert floodfilled image
-	    Mat im_floodfill_inv;
-	    bitwise_not(im_floodfill, im_floodfill_inv);
-
-	    // Combine the two images to get the foreground.
-	    Mat im_out = (yellow_bin | im_floodfill_inv);
-	    // Perform the distance transform algorithm
-		//http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
-
-	    //showScaled("Filled", im_out);
-
-	    Mat dist;
-	    distanceTransform(im_out, dist, CV_DIST_L2, 3);
-
-	    normalize(dist, dist, 0, 1., NORM_MINMAX);
-	    //showScaled("Distance Transform Image", dist);
-
-		// Threshold to obtain the peaks
-		// This will be the markers for the foreground objects
-		threshold(dist, dist, .5, 1., CV_THRESH_BINARY);
-		// Dilate a bit the dist image
-		Mat kernel1 = Mat::ones(3, 3, CV_8UC1);
-		dilate(dist, dist, kernel1);
-		//showScaled("Peaks", dist);
-		// Create the CV_8U version of the distance image
-		// It is needed for findContours()
-		Mat dist_8u;
-		dist.convertTo(dist_8u, CV_8U);
-		// Find total markers
-		vector<vector<Point> > contours;
-		findContours(dist_8u, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-		// Create the marker image for the watershed algorithm
-		Mat markers = Mat::zeros(dist.size(), CV_32SC1);
-		// Draw the foreground markers
-		for (size_t i = 0; i < contours.size(); i++)
-		 drawContours(markers, contours, static_cast<int>(i), Scalar::all(static_cast<int>(i)+1), -1);
-		// Draw the background marker
-		circle(markers, Point(5,5), 3, CV_RGB(255,255,255), -1);
-		// Perform the watershed algorithm
-		watershed(image, markers);
-//		Mat mark = Mat::zeros(markers.size(), CV_8UC1);
-//		markers.convertTo(mark, CV_8UC1);
-//		bitwise_not(mark, mark);
-//		showScaled("Markers_v2", mark); // uncomment this if you want to see how the mark
-//	                                   // image looks like at that point
-
-	    // Generate random colors
-/*		vector<Vec3b> colors;
-		for (size_t i = 0; i < contours.size(); i++)
-		{
-			int b = theRNG().uniform(0, 255);
-			int g = theRNG().uniform(0, 255);
-			int r = theRNG().uniform(0, 255);
-			colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
-		}
-		// Create the result image
-		Mat dst = Mat::zeros(markers.size(), CV_8UC3);
-		// Fill labeled objects with random colors
-		for (int i = 0; i < markers.rows; i++)
-		{
-			for (int j = 0; j < markers.cols; j++)
-			{
-				int index = markers.at<int>(i,j);
-				if (index > 0 && index <= static_cast<int>(contours.size()))
-					dst.at<Vec3b>(i,j) = colors[index-1];
-				else
-					dst.at<Vec3b>(i,j) = Vec3b(0,0,0);
-			}
-		}
-		// Visualize the final image
-		showScaled("Final Result", dst);*/
-
-
-		SimpleBlobDetector::Params params;
-		params.minThreshold = 10;
-		params.maxThreshold = 250;
-		SimpleBlobDetector detector(params);
-		vector<RotatedRect> possibilities;
-		for(int i = 1; i <= contours.size(); i++){
-			Mat singleElem = markers == i;
-			vector<vector<Point>> singleDiceContours;
-			vector<Point> singleDiceContour;
-			findContours(singleElem, singleDiceContours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-			if(singleDiceContours.size() > 1){
-				cout << "single Dice was seen as multiple elems: " << singleDiceContours.size() << endl;
-			}
-			singleDiceContour = singleDiceContours[0];
-			RotatedRect elem = minAreaRect(singleDiceContour);
-
-			if(elem.size.width < 80 || elem.size.height < 80){
-			   cout << "Kantenl'nge too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
-			   continue;
-			}
-
-			if(elem.size.width > 165 || elem.size.height > 165){
-			   cout << "Kantenl'nge too big (" << elem.size.width << "," << elem.size.height << ")" << endl;
-			   //continue;
-			}
-
-			//todo: further checking
-
-			bool nah = false;
-			for(RotatedRect possibility : possibilities){
-				if(norm(possibility.center-elem.center) < 40){
-					nah = true;
-					break;
-				}
-			}
-			if(nah){
-				cout << "too close to another found dice" << endl;
-				continue;
-			}
-
-			//Nachbearbeitung
-			elem.center -= Point2f(erosion_size,erosion_size);
-			elem.size += Size2f(2*erosion_size,2*erosion_size);
-
-			possibilities.push_back(elem);
-			dices.push_back(countBlobs(detector, yellow_bin, elem, singleDiceContour));
-			drawApprox(yellow_bin, singleDiceContour, i, 4);
-		}
-
-		cvtColor(yellow_bin, yellow_bin, CV_GRAY2RGB);
-		//drawApproxes(display, contours, 4);
-		//drawApproxes(yellow_bin, contours, 6);
-		//drawRects(display, possibilities);
-		drawRects(yellow_bin, possibilities);
+		cout << "yelllow_bin: " << type2str(yellow_bin.type()) << endl;
+		segmentAndRecognizeFromBinImage(yellow_bin, dices, erosion_size);
+		draw (yellow_bin, dices);
 		showScaled("testnme", yellow_bin);
 
-		cout << "Found " << possibilities.size() << " dices." << endl;
+
 		waitKey(500);
 	}while((key = getchar()) != 'q');
 
@@ -442,7 +422,7 @@ void idea2(Mat& image, Mat& display, vector<Dice>& dices){
 //! for debugging reasons
 void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
    // TODO: Implement
-	idea1(image, display, dices);
+	segmentDices(image, display, dices);
 }
 
 //! Adds a list of recognized dices to statistics

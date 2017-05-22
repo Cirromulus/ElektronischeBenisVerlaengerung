@@ -358,7 +358,7 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 	int erosion_size = 1;
 	//yellow 09 A0 6F, 6E FF FF
 	do{
-		dices.clear();	//FIXME only for debug
+// 		dices.clear();	//FIXME only for debug
 		switch(key){
 		case '\n':
 			continue;
@@ -418,12 +418,13 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 		inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
 		cout << "yelllow_bin: " << type2str(yellow_bin.type()) << endl;
 		segmentAndRecognizeFromBinImage(yellow_bin, dices, erosion_size);
-		draw (yellow_bin, dices);
-		showScaled("testnme", yellow_bin);
+// 		draw (yellow_bin, dices);
+// 		showScaled("testnme", yellow_bin);
 
 
-		waitKey(500);
-	}while((key = getchar()) != 'q');
+// 		waitKey(500);
+//     }while((key = getchar()) != 'q');
+	}while(false);
 
 }
 //! Recognizes all dices in images and returns them in dices
@@ -434,11 +435,11 @@ void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
 	segmentDices(image, display, dices);
 }
 
-//! Adds a list of recognized dices to statistics
-//! statistics[i] shows how often overall Dice.eyes was i
 void addToStatistics (vector<int>& statistics, const vector<Dice>& dices)
 {
-   //TODO: Implement
+    for (int i=0; i < dices.size(); i++) {
+        statistics[dices[i].eyes]++;
+    }
 }
 
 //! Returns whether the distribution of eyes in statistics in compatible
@@ -446,8 +447,24 @@ void addToStatistics (vector<int>& statistics, const vector<Dice>& dices)
 //! The function executes a chi-square-distribution test with
 //! a significance level of 90%.
 bool passed (const vector<int>& statistics) {
-   //TODO: Implement
-   return true;
+
+    int n = 0; 
+    float xemp = 0;
+    for (int i=1; i <= 6; i++) {
+        n = n+statistics[i];
+    }
+
+    int ne = n/6;
+
+    for (int i=1; i <= 6; i++) {
+        xemp = xemp + (pow((statistics[i]-ne), 2) / ne);
+        std::cout << "DEBUG: xemp for " << i << " Augen = " << xemp << std::endl;
+    }
+    if (xemp < 1.61) { // 1,61 Ist ist die Grenze bei 5 Freiheitsgraden und einem 90% Testniveau
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -480,7 +497,7 @@ int main( int argc, char** argv )
        draw (display, dices);
 
        showScaled (windowname, display);
-       if (waitKey()==27) break;
+//        if (waitKey()==27) break;
        imageCtr++;
     } 
     cout << endl << endl;

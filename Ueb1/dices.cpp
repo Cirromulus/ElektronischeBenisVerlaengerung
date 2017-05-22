@@ -63,12 +63,18 @@ void drawHull(Mat& dst, vector<Point2i> hull, int col){
 	}
 }
 
+/**
+ * @brief draws a vector of points in given size in cycling colors
+ */
 void drawApprox(Mat& dst, vector<Point> hull, int col, int size){
 	for (int i = 0; i < hull.size(); i++){
 		line(dst, hull[i], hull[(i+1)%hull.size()], color[col%6], size);
 	}
 }
 
+/**
+ * @brief draws a vector of vector of points in given size in cycling colors
+ */
 void drawApproxes(Mat& dst, vector<vector<Point>> app, int size = 1){
 	for (int i = 0; i < app.size(); i++){
 		drawApprox(dst, app[i], i, size);
@@ -162,16 +168,19 @@ ostream& operator<< (std::ostream& stream, const vector<Dice>& dices) {
    return stream;
 }
 
-
+/**
+ * @brief counts blobs as dark circles inside a white area.
+ */
 Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Point>& approx){
-	Mat bb, M, cropped, rotated;
-
+	Mat bb, M, cropped;
+	//!Get bounding Rect of recognized shape
 	Rect br = boundingRect(Mat(approx));
-	cout << br << endl;
+	//!Crop original image to bounding Box
 	bb = orig(br);
 	int dilatation_size = 3;
 
-	float angle = elem.angle;
+	//! This is not needed anymore
+	/*float angle = elem.angle;
 	Point2f offs(br.tl().x, br.tl().y);
 	Size rect_size = elem.size;
 	// thanks to http://felix.abecassis.me/2011/10/opencv-rotation-deskewing/
@@ -182,14 +191,16 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	// get the rotation matrix
 	M = getRotationMatrix2D(elem.center-offs, angle, 1.0);
 	// perform the affine transformation
+	Mat rotated;
 	warpAffine(bb, rotated, M, bb.size(), INTER_CUBIC);
 	// crop the resulting image
-	getRectSubPix(rotated, rect_size, elem.center-offs, cropped);
+	getRectSubPix(rotated, rect_size, elem.center-offs, cropped);*/
 
 	//Now we cropped the Dice.
+	cropped = bb;
 
 	//try connecting circles
-	/// Apply the dilation operation
+	//! Apply a dilation operation to smooth holes and wipe some outside dirt
 	dilate( cropped, cropped, getStructuringElement( MORPH_ELLIPSE,
             Size( 2*dilatation_size + 1, 2*dilatation_size+1 ),
             Point( dilatation_size, dilatation_size ) )
@@ -198,17 +209,24 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	std::vector<KeyPoint> keypoints;
 	d.detect(cropped, keypoints);
 
+	cout << br;
 	if(keypoints.size() == 0 || keypoints.size() > 6){
-		cout << "Could not detect correctly at " << elem.center << endl;
+		cout << " Could not detect correctly at " << elem.center;
 	}
+	cout << " found " << keypoints.size() << " eyes." << endl;
 	//cout << "Number: " << keypoints.size() << endl;
 	//drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 	//showScaled("D", cropped);
-	//waitKey();
+	//waitKey(150);
 
 	return Dice(elem.center, keypoints.size());
 }
 
+/**
+ * @brief Segments a binimage by watershed and applies countBlobs on each found FG Element
+ *
+ * May contain some Sources found in http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
+ */
 void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& erosion_size){
 	// Floodfill from point (0, 0)
 	Mat im_floodfill = binImage.clone();
@@ -221,9 +239,8 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	// Combine the two images to get the foreground.
 	Mat filled = (binImage | im_floodfill_inv);
 	// Perform the distance transform algorithm
-	//http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
 
-	showScaled("Filled", filled);
+	//showScaled("Filled", filled);
 
 	Mat dist;
 	distanceTransform(filled, dist, CV_DIST_L2, 3);
@@ -259,9 +276,8 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
     Mat mark = Mat::zeros(markers.size(), CV_8UC1);
     markers.convertTo(mark, CV_8UC1);
     bitwise_not(mark, mark);
-//    imshow("Markers_v2", mark); // uncomment this if you want to see how the mark
-                                  // image looks like at that point
-    // Generate random colors
+
+    /* Generate random colors, just for the debug looks
     vector<Vec3b> colors;
     for (size_t i = 0; i < contours.size(); i++)
     {
@@ -285,7 +301,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
         }
     }
     // Visualize the final image
-    showScaled("Final Result", dst);
+    showScaled("Final Result", dst);*/
 
 	SimpleBlobDetector::Params params;
 	params.minThreshold = 5;
@@ -294,6 +310,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	vector<RotatedRect> possibilities;
 	cvtColor(binImage, binImage, CV_GRAY2RGB);
 	for(int i = 1; i <= contours.size(); i++){
+		//New Image masked with just one found element
 		Mat singleElem = markers == i;
 		vector<vector<Point>> singleDiceContours;
 		vector<Point> singleDiceContour;
@@ -316,8 +333,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 		   continue;
 		}
 
-		//todo: further checking
-
+		/* this is not needed with watershed anymore
 		bool nah = false;
 		for(RotatedRect possibility : possibilities){
 			if(norm(possibility.center-elem.center) < 30){
@@ -329,10 +345,10 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 			cout << "too close to another found dice" << endl;
 			continue;
 		}
-
 		//Nachbearbeitung
 		elem.center -= Point2f(erosion_size,erosion_size);
 		elem.size += Size2f(2*erosion_size,2*erosion_size);
+		*/
 
 		possibilities.push_back(elem);
 		dices.push_back(countBlobs(detector, binImage, elem, singleDiceContour));

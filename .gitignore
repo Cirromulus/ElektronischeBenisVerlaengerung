@@ -4,6 +4,7 @@ CMakeFiles/
 Makefile
 cmake_install.cmake
 
+*.kdev4
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

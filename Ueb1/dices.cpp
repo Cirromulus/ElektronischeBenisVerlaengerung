@@ -426,28 +426,6 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 	}while((key = getchar()) != 'q');
 
 }
-
-void idea2(Mat& image, Mat& display, vector<Dice>& dices){
-	Mat yellow_bin;
-	Mat canny_output;
-	unsigned char lr = 0x09, lg = 0x95, lb = 0x6F,
-			hr = 0x6E, hg = 0xFF, hb = 0xFF;
-	inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
-
-	Mat shure_bg;
-	dilate(yellow_bin, shure_bg, Mat(),Point(), 2);
-	Mat dist_transform;
-	distanceTransform(yellow_bin, dist_transform, CV_DIST_L2, 5);
-	Mat shure_fg;
-	double th = threshold(dist_transform, shure_fg, 127, 255, 0);
-	shure_fg.convertTo(shure_fg, CV_8U);
-	cout << type2str(shure_bg.type()) << " " << type2str(shure_fg.type()) << endl;
-	Mat unknown = shure_bg-shure_fg;
-
-	showScaled("Shure fg", shure_fg);
-	showScaled("Shure bg", shure_bg);
-	showScaled("unnoknwd", unknown);
-}
 //! Recognizes all dices in images and returns them in dices
 //! display is passed, just in case you want to show something
 //! for debugging reasons

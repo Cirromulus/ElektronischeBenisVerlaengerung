@@ -9,6 +9,7 @@
 #include "opencv2/features2d/features2d.hpp"
 #include <algorithm>
 #include <iostream>
+#include <unistd.h>
 
 using namespace std;
 using namespace cv;
@@ -176,11 +177,16 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	//!Get bounding Rect of recognized shape
 	Rect br = boundingRect(Mat(approx));
 	//!Crop original image to bounding Box
+    br.width -= 12;
+    br.height -= 12;
+    br.x += 6;
+    br.y += 6;
 	bb = orig(br);
-	int dilatation_size = 3;
+    int dilatation_size = 7;
+	int erosion_size = 3;
 
 	//! This is not needed anymore
-	/*float angle = elem.angle;
+	float angle = elem.angle;
 	Point2f offs(br.tl().x, br.tl().y);
 	Size rect_size = elem.size;
 	// thanks to http://felix.abecassis.me/2011/10/opencv-rotation-deskewing/
@@ -194,10 +200,10 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	Mat rotated;
 	warpAffine(bb, rotated, M, bb.size(), INTER_CUBIC);
 	// crop the resulting image
-	getRectSubPix(rotated, rect_size, elem.center-offs, cropped);*/
+	getRectSubPix(rotated, rect_size, elem.center-offs, cropped);
 
 	//Now we cropped the Dice.
-	cropped = bb;
+// 	cropped = bb;
 
 	//try connecting circles
 	//! Apply a dilation operation to smooth holes and wipe some outside dirt
@@ -205,19 +211,24 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
             Size( 2*dilatation_size + 1, 2*dilatation_size+1 ),
             Point( dilatation_size, dilatation_size ) )
 			);
+    
+    erode( cropped, cropped, getStructuringElement( MORPH_ELLIPSE,
+            Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+            Point( erosion_size, erosion_size ) )
+            );
 
 	std::vector<KeyPoint> keypoints;
 	d.detect(cropped, keypoints);
 
-	cout << br;
+// 	cout << br;
 	if(keypoints.size() == 0 || keypoints.size() > 6){
 		cout << " Could not detect correctly at " << elem.center;
 	}
-	cout << " found " << keypoints.size() << " eyes." << endl;
-	//cout << "Number: " << keypoints.size() << endl;
-	//drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-	//showScaled("D", cropped);
-	//waitKey(150);
+// 	cout << " found " << keypoints.size() << " eyes." << endl;
+//     cout << "Number: " << keypoints.size() << endl;
+// 	drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+// 	showScaled("D", cropped);
+// 	waitKey(1000);
 
 	return Dice(elem.center, keypoints.size());
 }
@@ -228,29 +239,36 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
  * May contain some Sources found in http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
  */
 void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& erosion_size){
+    int dilatation_size = 3;
 	// Floodfill from point (0, 0)
 	Mat im_floodfill = binImage.clone();
+
+    
 	floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
 
 	// Invert floodfilled image
 	Mat im_floodfill_inv;
 	bitwise_not(im_floodfill, im_floodfill_inv);
 
+	showScaled("Filled1", im_floodfill_inv);
 	// Combine the two images to get the foreground.
 	Mat filled = (binImage | im_floodfill_inv);
 	// Perform the distance transform algorithm
 
-	//showScaled("Filled", filled);
+    showScaled("Filled", filled);
 
 	Mat dist;
 	distanceTransform(filled, dist, CV_DIST_L2, 3);
 
-	normalize(dist, dist, 0, 1., NORM_MINMAX);
+	normalize(dist, dist, 0, 255, NORM_MINMAX);
 	//showScaled("Distance Transform Image", dist);
 
 	// Threshold to obtain the peaks
 	// This will be the markers for the foreground objects
-	threshold(dist, dist, .83, 1., CV_THRESH_BINARY);
+    std::cout << type2str(dist.type()) << std::endl;
+    dist.convertTo(dist, CV_8U);
+    adaptiveThreshold(dist, dist, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 9, -4);
+// 	threshold(dist, dist, .84, 1., CV_THRESH_BINARY);
 	// Dilate a bit the dist image
 	Mat kernel1 = Mat::ones(3, 3, CV_8UC1);
 	dilate(dist, dist, kernel1);
@@ -277,35 +295,41 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
     markers.convertTo(mark, CV_8UC1);
     bitwise_not(mark, mark);
 
-    /* Generate random colors, just for the debug looks
-    vector<Vec3b> colors;
-    for (size_t i = 0; i < contours.size(); i++)
-    {
-        int b = theRNG().uniform(0, 255);
-        int g = theRNG().uniform(0, 255);
-        int r = theRNG().uniform(0, 255);
-        colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
-    }
-    // Create the result image
-    Mat dst = Mat::zeros(markers.size(), CV_8UC3);
-    // Fill labeled objects with random colors
-    for (int i = 0; i < markers.rows; i++)
-    {
-        for (int j = 0; j < markers.cols; j++)
-        {
-            int index = markers.at<int>(i,j);
-            if (index > 0 && index <= static_cast<int>(contours.size()))
-                dst.at<Vec3b>(i,j) = colors[index-1];
-            else
-                dst.at<Vec3b>(i,j) = Vec3b(0,0,0);
-        }
-    }
-    // Visualize the final image
-    showScaled("Final Result", dst);*/
+    
+    
+    
+//     // Generate random colors, just for the debug looks
+//     vector<Vec3b> colors;
+//     for (size_t i = 0; i < contours.size(); i++)
+//     {
+//         int b = theRNG().uniform(0, 255);
+//         int g = theRNG().uniform(0, 255);
+//         int r = theRNG().uniform(0, 255);
+//         colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
+//     }
+//     // Create the result image
+//     Mat dst = Mat::zeros(markers.size(), CV_8UC3);
+//     // Fill labeled objects with random colors
+//     for (int i = 0; i < markers.rows; i++)
+//     {
+//         for (int j = 0; j < markers.cols; j++)
+//         {
+//             int index = markers.at<int>(i,j);
+//             if (index > 0 && index <= static_cast<int>(contours.size()))
+//                 dst.at<Vec3b>(i,j) = colors[index-1];
+//             else
+//                 dst.at<Vec3b>(i,j) = Vec3b(0,0,0);
+//         }
+//     }
+//     // Visualize the final image
+//     showScaled("Final Result", dst);
+    
+    
+    
 
 	SimpleBlobDetector::Params params;
-	params.minThreshold = 5;
-	params.maxThreshold = 255;
+	params.minThreshold = 0;
+	params.maxThreshold = 30;
 	SimpleBlobDetector detector(params);
 	vector<RotatedRect> possibilities;
 	cvtColor(binImage, binImage, CV_GRAY2RGB);
@@ -352,6 +376,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 
 		possibilities.push_back(elem);
 		dices.push_back(countBlobs(detector, binImage, elem, singleDiceContour));
+        cout << "Type: " << type2str(binImage.type()) << endl;
 	}
 	//drawApproxes(display, contours, 4);
 	//drawApproxes(yellow_bin, contours, 6);
@@ -365,60 +390,67 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 
 void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 	Mat yellow_bin;
-	Mat canny_output;
+    Mat blue_bin;
+    Mat white_bin;
+    
+    Mat hsv;
+    cvtColor(image, hsv, CV_BGR2HSV);
+    
+//     showScaled ("HSV", hsv);
+    
 	unsigned char key = 0;
-	unsigned char inc = 10;
-	unsigned char lr = 0x1D, lg = 0x80, lb = 0x92,
-			hr = 0x78, hg = 0xFF, hb = 0xFF;
+	unsigned char inc = 5;
+//     unsigned char wl = 80/2, wh = 100/2, yl = 25, yh = 115, bl = 210/2, bh = 230/2;
+	unsigned char wl = 90, wh = 175, yl = 100, yh = 120, bl = 60, bh = 255;
 	unsigned char RETR = CV_RETR_FLOODFILL, CHAIN = CV_CHAIN_APPROX_TC89_KCOS ;
-	int erosion_size = 1;
+	int erosion_size = 6;
 	//yellow 09 A0 6F, 6E FF FF
 	do{
-// 		dices.clear();	//FIXME only for debug
+		dices.clear();	//FIXME only for debug
 		switch(key){
 		case '\n':
 			continue;
 		case '1':
-			inc -= 5;
+			inc -= 1;
 			break;
 		case '2':
-			inc += 5;
+			inc += 1;
 			break;
 		case 'w':
-			lr += inc;
+			wh += inc;
 			break;
 		case 's':
-			lr -= inc;
+			wh -= inc;
 			break;
 		case 'e':
-			lg += inc;
+			wl += inc;
 			break;
 		case 'd':
-			lg -= inc;
+			wl -= inc;
 			break;
 		case 'r':
-			lb += inc;
+			yh += inc;
 			break;
 		case 'f':
-			lb -= inc;
+			yh -= inc;
 			break;
 		case 'u':
-			hr += inc;
+			yl += inc;
 			break;
 		case 'j':
-			hr -= inc;
+			yl -= inc;
 			break;
 		case 'i':
-			hg += inc;
+			bh += inc;
 			break;
 		case 'k':
-			hg -= inc;
+			bh -= inc;
 			break;
 		case 'o':
-			hb += inc;
+			bl += inc;
 			break;
 		case 'l':
-			hb -= inc;
+			bl -= inc;
 			break;
 		case 'x':
 			erosion_size--;
@@ -430,18 +462,37 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 			printf("Fucktard\n");
 
 		}
-		printf("s: %d, l: %02X %02X %02X, h: %02X %02X %02X, erosion: %d\n", inc, lr, lg, lb, hr, hg, hb, erosion_size);
-		inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
-		cout << "yelllow_bin: " << type2str(yellow_bin.type()) << endl;
-		segmentAndRecognizeFromBinImage(yellow_bin, dices, erosion_size);
-// 		draw (yellow_bin, dices);
-// 		showScaled("testnme", yellow_bin);
+//         printf("s: %d, l: %02X %02X %02X, h: %02X %02X %02X, erosion: %d\n", inc, lr, lg, lb, hr, hg, hb, erosion_size);
+        printf("s: %d, l: %d %d %d, h: %d %d %d, erosion: %d\n", inc, yl, bl, wl, yh, bh, wh, erosion_size);
+// 		printf("s: %d, yl: %d, yh: %d, erosion: %d\n", inc, yl, yh, erosion_size);
+// 		inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
+
+        Rect rect(0, 0, image.size().width * 0.77, image.size().height * 0.9);
+        
+//         inRange(hsv, Scalar(yl, bl, wl), Scalar(yh, bh, wh), blue_bin);
+
+        inRange(hsv, Scalar(0, 0, 175), Scalar(180, 75, 255), white_bin);    //WHITE
+        Mat white_crop = white_bin(rect);                                    //WHITE_CROPPED
+        inRange(hsv, Scalar(0, 75, 160), Scalar(50, 255, 255), yellow_bin);  //YELLOW
+        Mat yellow_crop = yellow_bin(rect);                                  //YELLOW_CROPPED
+        inRange(hsv, Scalar(100, 60, 90), Scalar(120, 255, 185), blue_bin);  //BLUE
+        Mat blue_crop = blue_bin(rect);                                      //BLUE_CROPPED
+
+// 		cout << "white_bin: " << type2str(white_bin.type()) << endl;
+        segmentAndRecognizeFromBinImage(blue_crop, dices, erosion_size);
+//         segmentAndRecognizeFromBinImage(white_crop, dices, erosion_size);
+// 		segmentAndRecognizeFromBinImage(yellow_crop, dices, erosion_size);
+		draw (blue_crop, dices);
+//         showScaled("testnme", blue_bin);
+		showScaled("testncrop", blue_crop);
 
 
-// 		waitKey(500);
-//     }while((key = getchar()) != 'q');
+#ifdef CONFIG
+		waitKey(500);
+    }while((key = getchar()) != 'q');
+#else
 	}while(false);
-
+#endif
 }
 //! Recognizes all dices in images and returns them in dices
 //! display is passed, just in case you want to show something
@@ -513,7 +564,7 @@ int main( int argc, char** argv )
        draw (display, dices);
 
        showScaled (windowname, display);
-//        if (waitKey()==27) break;
+       if (waitKey()==27) break;
        imageCtr++;
     } 
     cout << endl << endl;

@@ -225,12 +225,41 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 		cout << " Could not detect correctly at " << elem.center;
 	}
 // 	cout << " found " << keypoints.size() << " eyes." << endl;
-//     cout << "Number: " << keypoints.size() << endl;
+//  cout << "Number: " << keypoints.size() << endl;
 // 	drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 // 	showScaled("D", cropped);
 // 	waitKey(1000);
 
 	return Dice(elem.center, keypoints.size());
+}
+
+
+void drawWatershedImage(int count, Mat markers){
+     // Generate random colors, just for the debug looks
+     vector<Vec3b> colors;
+     for (size_t i = 0; i < count; i++)
+     {
+         int b = theRNG().uniform(0, 255);
+         int g = theRNG().uniform(0, 255);
+         int r = theRNG().uniform(0, 255);
+         colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
+     }
+     // Create the result image
+     Mat dst = Mat::zeros(markers.size(), CV_8UC3);
+     // Fill labeled objects with random colors
+     for (int i = 0; i < markers.rows; i++)
+     {
+         for (int j = 0; j < markers.cols; j++)
+         {
+             int index = markers.at<int>(i,j);
+             if (index > 0 && index <= static_cast<int>(count))
+                 dst.at<Vec3b>(i,j) = colors[index-1];
+             else
+                 dst.at<Vec3b>(i,j) = Vec3b(0,0,0);
+         }
+     }
+     // Visualize the final image
+     showScaled("Final Result", dst);
 }
 
 /**
@@ -250,7 +279,6 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	Mat im_floodfill_inv;
 	bitwise_not(im_floodfill, im_floodfill_inv);
 
-	showScaled("Filled1", im_floodfill_inv);
 	// Combine the two images to get the foreground.
 	Mat filled = (binImage | im_floodfill_inv);
 	// Perform the distance transform algorithm
@@ -260,15 +288,15 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	Mat dist;
 	distanceTransform(filled, dist, CV_DIST_L2, 3);
 
-	normalize(dist, dist, 0, 255, NORM_MINMAX);
-	//showScaled("Distance Transform Image", dist);
+    dist.convertTo(dist, CV_8U);
+    double max = 255;
+	normalize(dist, dist, 0, max, NORM_MINMAX);
 
+	showScaled("Distance Transform Image", dist);
 	// Threshold to obtain the peaks
 	// This will be the markers for the foreground objects
-    std::cout << type2str(dist.type()) << std::endl;
-    dist.convertTo(dist, CV_8U);
-    adaptiveThreshold(dist, dist, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 9, -4);
-// 	threshold(dist, dist, .84, 1., CV_THRESH_BINARY);
+    //adaptiveThreshold(dist, dist, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 9, -4);
+ 	threshold(dist, dist, .84*max, 1.*max, CV_THRESH_BINARY);
 	// Dilate a bit the dist image
 	Mat kernel1 = Mat::ones(3, 3, CV_8UC1);
 	dilate(dist, dist, kernel1);
@@ -295,44 +323,15 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
     markers.convertTo(mark, CV_8UC1);
     bitwise_not(mark, mark);
 
+    drawWatershedImage(contours.size(), markers);
     
-    
-    
-//     // Generate random colors, just for the debug looks
-//     vector<Vec3b> colors;
-//     for (size_t i = 0; i < contours.size(); i++)
-//     {
-//         int b = theRNG().uniform(0, 255);
-//         int g = theRNG().uniform(0, 255);
-//         int r = theRNG().uniform(0, 255);
-//         colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
-//     }
-//     // Create the result image
-//     Mat dst = Mat::zeros(markers.size(), CV_8UC3);
-//     // Fill labeled objects with random colors
-//     for (int i = 0; i < markers.rows; i++)
-//     {
-//         for (int j = 0; j < markers.cols; j++)
-//         {
-//             int index = markers.at<int>(i,j);
-//             if (index > 0 && index <= static_cast<int>(contours.size()))
-//                 dst.at<Vec3b>(i,j) = colors[index-1];
-//             else
-//                 dst.at<Vec3b>(i,j) = Vec3b(0,0,0);
-//         }
-//     }
-//     // Visualize the final image
-//     showScaled("Final Result", dst);
-    
-    
-    
-
 	SimpleBlobDetector::Params params;
 	params.minThreshold = 0;
 	params.maxThreshold = 30;
 	SimpleBlobDetector detector(params);
 	vector<RotatedRect> possibilities;
 	cvtColor(binImage, binImage, CV_GRAY2RGB);
+	//waitKey();
 	for(int i = 1; i <= contours.size(); i++){
 		//New Image masked with just one found element
 		Mat singleElem = markers == i;
@@ -357,33 +356,13 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 		   continue;
 		}
 
-		/* this is not needed with watershed anymore
-		bool nah = false;
-		for(RotatedRect possibility : possibilities){
-			if(norm(possibility.center-elem.center) < 30){
-				nah = true;
-				break;
-			}
-		}
-		if(nah){
-			cout << "too close to another found dice" << endl;
-			continue;
-		}
-		//Nachbearbeitung
-		elem.center -= Point2f(erosion_size,erosion_size);
-		elem.size += Size2f(2*erosion_size,2*erosion_size);
-		*/
-
 		possibilities.push_back(elem);
 		dices.push_back(countBlobs(detector, binImage, elem, singleDiceContour));
-        cout << "Type: " << type2str(binImage.type()) << endl;
 	}
-	//drawApproxes(display, contours, 4);
-	//drawApproxes(yellow_bin, contours, 6);
-	//drawRects(display, possibilities);
-	//drawRects(binImage, possibilities);
+	drawRects(binImage, possibilities);
 
 	cout << "Found " << possibilities.size() << " dices." << endl;
+
 }
 
 /********** BELOW HERE TODOs ******************************/
@@ -396,104 +375,28 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
     Mat hsv;
     cvtColor(image, hsv, CV_BGR2HSV);
     
-//     showScaled ("HSV", hsv);
-    
-	unsigned char key = 0;
-	unsigned char inc = 5;
-//     unsigned char wl = 80/2, wh = 100/2, yl = 25, yh = 115, bl = 210/2, bh = 230/2;
-	unsigned char wl = 90, wh = 175, yl = 100, yh = 120, bl = 60, bh = 255;
 	unsigned char RETR = CV_RETR_FLOODFILL, CHAIN = CV_CHAIN_APPROX_TC89_KCOS ;
 	int erosion_size = 6;
-	//yellow 09 A0 6F, 6E FF FF
-	do{
-		dices.clear();	//FIXME only for debug
-		switch(key){
-		case '\n':
-			continue;
-		case '1':
-			inc -= 1;
-			break;
-		case '2':
-			inc += 1;
-			break;
-		case 'w':
-			wh += inc;
-			break;
-		case 's':
-			wh -= inc;
-			break;
-		case 'e':
-			wl += inc;
-			break;
-		case 'd':
-			wl -= inc;
-			break;
-		case 'r':
-			yh += inc;
-			break;
-		case 'f':
-			yh -= inc;
-			break;
-		case 'u':
-			yl += inc;
-			break;
-		case 'j':
-			yl -= inc;
-			break;
-		case 'i':
-			bh += inc;
-			break;
-		case 'k':
-			bh -= inc;
-			break;
-		case 'o':
-			bl += inc;
-			break;
-		case 'l':
-			bl -= inc;
-			break;
-		case 'x':
-			erosion_size--;
-			break;
-		case 'c':
-			erosion_size++;
-			break;
-		default:
-			printf("Fucktard\n");
 
-		}
-//         printf("s: %d, l: %02X %02X %02X, h: %02X %02X %02X, erosion: %d\n", inc, lr, lg, lb, hr, hg, hb, erosion_size);
-        printf("s: %d, l: %d %d %d, h: %d %d %d, erosion: %d\n", inc, yl, bl, wl, yh, bh, wh, erosion_size);
-// 		printf("s: %d, yl: %d, yh: %d, erosion: %d\n", inc, yl, yh, erosion_size);
-// 		inRange(image, Scalar(lr, lg, lb), Scalar(hr, hg, hb), yellow_bin);
+	Rect rect(0, 0, image.size().width * 0.77, image.size().height * 0.9);
 
-        Rect rect(0, 0, image.size().width * 0.77, image.size().height * 0.9);
-        
-//         inRange(hsv, Scalar(yl, bl, wl), Scalar(yh, bh, wh), blue_bin);
+//  inRange(hsv, Scalar(yl, bl, wl), Scalar(yh, bh, wh), blue_bin);
 
-        inRange(hsv, Scalar(0, 0, 175), Scalar(180, 75, 255), white_bin);    //WHITE
-        Mat white_crop = white_bin(rect);                                    //WHITE_CROPPED
-        inRange(hsv, Scalar(0, 75, 160), Scalar(50, 255, 255), yellow_bin);  //YELLOW
-        Mat yellow_crop = yellow_bin(rect);                                  //YELLOW_CROPPED
-        inRange(hsv, Scalar(100, 60, 90), Scalar(120, 255, 185), blue_bin);  //BLUE
-        Mat blue_crop = blue_bin(rect);                                      //BLUE_CROPPED
+	inRange(hsv, Scalar(0, 0, 175), Scalar(180, 75, 255), white_bin);    //WHITE
+	Mat white_crop = white_bin(rect);                                    //WHITE_CROPPED
+	inRange(hsv, Scalar(0, 75, 160), Scalar(50, 255, 255), yellow_bin);  //YELLOW
+	Mat yellow_crop = yellow_bin(rect);                                  //YELLOW_CROPPED
+	inRange(hsv, Scalar(100, 60, 90), Scalar(120, 255, 185), blue_bin);  //BLUE
+	Mat blue_crop = blue_bin(rect);                                      //BLUE_CROPPED
 
-// 		cout << "white_bin: " << type2str(white_bin.type()) << endl;
-        segmentAndRecognizeFromBinImage(blue_crop, dices, erosion_size);
-//         segmentAndRecognizeFromBinImage(white_crop, dices, erosion_size);
-// 		segmentAndRecognizeFromBinImage(yellow_crop, dices, erosion_size);
-		draw (blue_crop, dices);
-//         showScaled("testnme", blue_bin);
-		showScaled("testncrop", blue_crop);
-
-
-#ifdef CONFIG
-		waitKey(500);
-    }while((key = getchar()) != 'q');
-#else
-	}while(false);
-#endif
+	segmentAndRecognizeFromBinImage(blue_crop, dices, erosion_size);
+	segmentAndRecognizeFromBinImage(white_crop, dices, erosion_size);
+	segmentAndRecognizeFromBinImage(yellow_crop, dices, erosion_size);
+	//draw (blue_crop, dices);
+	//showScaled("testnme", blue_bin);
+	//showScaled("test", blue_crop);
 }
+
 //! Recognizes all dices in images and returns them in dices
 //! display is passed, just in case you want to show something
 //! for debugging reasons
@@ -525,7 +428,7 @@ bool passed (const vector<int>& statistics) {
 
     for (int i=1; i <= 6; i++) {
         xemp = xemp + (pow((statistics[i]-ne), 2) / ne);
-        std::cout << "DEBUG: xemp for " << i << " Augen = " << xemp << std::endl;
+        //std::cout << "DEBUG: xemp for " << i << " Augen = " << xemp << std::endl;
     }
     if (xemp < 1.61) { // 1,61 Ist ist die Grenze bei 5 Freiheitsgraden und einem 90% Testniveau
         return true;

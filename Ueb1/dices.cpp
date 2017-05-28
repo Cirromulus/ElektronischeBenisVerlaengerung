@@ -18,7 +18,7 @@ using namespace cv;
 // the size below.
 int windowWidth = 1200, windowHeight = 600;
 
-
+bool debug = true;
 
 string windowname = "Dice Production QA";
 
@@ -222,12 +222,12 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 
 // 	cout << br;
 	if(keypoints.size() == 0 || keypoints.size() > 6){
-		cout << " Could not detect correctly at " << elem.center;
+		cout << " Could not detect correctly at " << elem.center << "(" << keypoints.size() << ")" << endl;
 	}
 // 	cout << " found " << keypoints.size() << " eyes." << endl;
 //  cout << "Number: " << keypoints.size() << endl;
 // 	drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-// 	showScaled("D", cropped);
+// 	if(debug) showScaled("D", cropped);
 // 	waitKey(1000);
 
 	return Dice(elem.center, keypoints.size());
@@ -263,6 +263,43 @@ void drawWatershedImage(int count, Mat markers){
 }
 
 /**
+ * @brief Special trick to segment dices in complicated environments
+ */
+void cleanupFloodfill(Mat& floodfill){
+	vector<vector<Point>> flood_contours;
+	vector<Vec4i> hierarchy;
+	double maxArea = 650, minArea = 0;
+	vector<unsigned> ausschuss;
+	Mat temp_image;
+	floodfill.copyTo(temp_image);					//Slow but necessary
+	findContours(temp_image, flood_contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+	// Find indices of contours whose area is wrong
+	if ( !flood_contours.empty()) {
+	    for (size_t i=0; i<flood_contours.size(); ++i) {
+	        double area = contourArea(flood_contours[i]);
+	        if (area < minArea || area > maxArea){
+	        	cout << "ignoring elem " << i << " with area " << area << endl;
+	            ausschuss.push_back(i);
+	        }
+	    }
+	}
+
+	//delete wrong contours from fillimage
+	Mat debugShit(Size(floodfill.size()), CV_32FC3);	//debug
+	Mat im_floodfill_clean;
+	floodfill.copyTo(im_floodfill_clean);		//clone is expensive, but for debugging it is OK
+	for(unsigned i = 0; i < ausschuss.size(); i++){
+		drawContours(im_floodfill_clean, flood_contours, ausschuss[i], cv::Scalar(0), CV_FILLED, 8);
+		drawContours(debugShit, flood_contours, ausschuss[i], cv::Scalar(255, 0, 0), CV_FILLED, 8);
+	}
+
+	if(debug) showScaled("im_floodfill_ignoredElems", debugShit);
+	if(debug) showScaled("im_floddfill_clean", im_floodfill_clean);
+
+	floodfill = im_floodfill_clean;
+}
+
+/**
  * @brief Segments a binimage by watershed and applies countBlobs on each found FG Element
  *
  * May contain some Sources found in http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
@@ -272,58 +309,68 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	// Floodfill from point (0, 0)
 	Mat im_floodfill = binImage.clone();
 
-    
+
 	floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
 
 	// Invert floodfilled image
 	Mat im_floodfill_inv;
 	bitwise_not(im_floodfill, im_floodfill_inv);
-
-	// Combine the two images to get the foreground.
-	Mat filled = (binImage | im_floodfill_inv);
-	// Perform the distance transform algorithm
-
-    showScaled("Filled", filled);
-
-	Mat dist;
-	distanceTransform(filled, dist, CV_DIST_L2, 3);
-
-    dist.convertTo(dist, CV_8U);
-    double max = 255;
-	normalize(dist, dist, 0, max, NORM_MINMAX);
-
-	showScaled("Distance Transform Image", dist);
-	// Threshold to obtain the peaks
-	// This will be the markers for the foreground objects
-    //adaptiveThreshold(dist, dist, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 9, -4);
- 	threshold(dist, dist, .84*max, 1.*max, CV_THRESH_BINARY);
-	// Dilate a bit the dist image
-	Mat kernel1 = Mat::ones(3, 3, CV_8UC1);
-	dilate(dist, dist, kernel1);
-	showScaled("Peaks", dist);
-	// Create the CV_8U version of the distance image
-	// It is needed for findContours()
-	Mat dist_8u;
-	dist.convertTo(dist_8u, CV_8U);
-	// Find total markers
+	if(debug) showScaled("im_floddfill_inv vorher", im_floodfill_inv);
+	bool repeat;
+	Mat markers;
 	vector<vector<Point> > contours;
-	findContours(dist_8u, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-	// Create the marker image for the watershed algorithm
-	Mat markers = Mat::zeros(dist.size(), CV_32SC1);
-	// Draw the foreground markers
-	for (size_t i = 0; i < contours.size(); i++)
-	 drawContours(markers, contours, static_cast<int>(i), Scalar::all(static_cast<int>(i)+1), -1);
-	// Draw the background marker
-	circle(markers, Point(5,5), 3, CV_RGB(255,255,255), -1);
-	// Perform the watershed algorithm
-	cvtColor(filled, filled, CV_GRAY2RGB);
-	watershed(filled, markers);
+	do{
+		repeat = false;
+		// Combine the two images to get the foreground.
+		Mat filled = (binImage | im_floodfill_inv);
+		// Perform the distance transform algorithm
 
-    Mat mark = Mat::zeros(markers.size(), CV_8UC1);
-    markers.convertTo(mark, CV_8UC1);
-    bitwise_not(mark, mark);
+		if(debug) showScaled("Filled", filled);
 
-    drawWatershedImage(contours.size(), markers);
+		Mat dist;
+		distanceTransform(filled, dist, CV_DIST_L2, 3);
+
+		dist.convertTo(dist, CV_8U);
+		double max = 255;
+		normalize(dist, dist, 0, max, NORM_MINMAX);
+
+		if(debug) showScaled("Distance Transform Image", dist);
+		// Threshold to obtain the peaks
+		// This will be the markers for the foreground objects
+		//adaptiveThreshold(dist, dist, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 9, -4);
+		threshold(dist, dist, .84*max, 1.*max, CV_THRESH_BINARY);
+		// Dilate a bit the dist image
+		Mat kernel1 = Mat::ones(3, 3, CV_8UC1);
+		dilate(dist, dist, kernel1);
+		if(debug) showScaled("Peaks", dist);
+		// Create the CV_8U version of the distance image
+		// It is needed for findContours()
+		Mat dist_8u;
+		dist.convertTo(dist_8u, CV_8U);
+		// Find total markers
+		findContours(dist_8u, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+		// Create the marker image for the watershed algorithm
+		markers = Mat::zeros(dist.size(), CV_32SC1);
+		// Draw the foreground markers
+		for (size_t i = 0; i < contours.size(); i++)
+		 drawContours(markers, contours, static_cast<int>(i), Scalar::all(static_cast<int>(i)+1), -1);
+		// Draw the background marker
+		circle(markers, Point(5,5), 3, CV_RGB(255,255,255), -1);
+		// Perform the watershed algorithm
+		cvtColor(filled, filled, CV_GRAY2RGB);
+		watershed(filled, markers);
+
+		Mat mark = Mat::zeros(markers.size(), CV_8UC1);
+		markers.convertTo(mark, CV_8UC1);
+		bitwise_not(mark, mark);
+		if(!repeat && contours.size() < 2){
+			cout << "Detected less dices than 2, retrying harder..." << endl;
+			cleanupFloodfill(im_floodfill_inv);
+			repeat = true;
+		}
+	}while(repeat);
+
+    if(debug) drawWatershedImage(contours.size(), markers);
     
 	SimpleBlobDetector::Params params;
 	params.minThreshold = 0;
@@ -331,7 +378,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 	SimpleBlobDetector detector(params);
 	vector<RotatedRect> possibilities;
 	cvtColor(binImage, binImage, CV_GRAY2RGB);
-	//waitKey();
+	if(debug) waitKey();
 	for(int i = 1; i <= contours.size(); i++){
 		//New Image masked with just one found element
 		Mat singleElem = markers == i;
@@ -393,15 +440,13 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 	segmentAndRecognizeFromBinImage(white_crop, dices, erosion_size);
 	segmentAndRecognizeFromBinImage(yellow_crop, dices, erosion_size);
 	//draw (blue_crop, dices);
-	//showScaled("testnme", blue_bin);
-	//showScaled("test", blue_crop);
+	if(debug) showScaled("test", blue_crop);
 }
 
 //! Recognizes all dices in images and returns them in dices
 //! display is passed, just in case you want to show something
 //! for debugging reasons
 void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
-   // TODO: Implement
 	segmentDices(image, display, dices);
 }
 

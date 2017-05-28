@@ -364,7 +364,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 		markers.convertTo(mark, CV_8UC1);
 		bitwise_not(mark, mark);
 		if(!repeat && contours.size() < 2){
-			cout << "Detected less dices than 2, retrying harder..." << endl;
+			cout << "Detected less than 2 dices, retrying harder..." << endl;
 			cleanupFloodfill(im_floodfill_inv);
 			repeat = true;
 		}

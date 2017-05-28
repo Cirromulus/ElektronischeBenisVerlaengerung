@@ -18,7 +18,7 @@ using namespace cv;
 // the size below.
 int windowWidth = 1200, windowHeight = 600;
 
-bool debug = true;
+bool debug = false;
 
 string windowname = "Dice Production QA";
 
@@ -393,21 +393,11 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 		singleDiceContour = singleDiceContours[0];
 		RotatedRect elem = minAreaRect(singleDiceContour);
 
-		if(elem.size.width < 80 || elem.size.height < 80){
-		   cout << "Kantenl'nge too small (" << elem.size.width << "," << elem.size.height << ")" << endl;
-		   continue;
-		}
-
-		if(elem.size.width > 168 || elem.size.height > 168){
-		   cout << "Kantenl'nge too big (" << elem.size.width << "," << elem.size.height << ")" << endl;
-		   continue;
-		}
-
 		possibilities.push_back(elem);
 		dices.push_back(countBlobs(detector, binImage, elem, singleDiceContour));
 	}
 	drawRects(binImage, possibilities);
-
+	if(debug) showScaled("BinImage", binImage);
 	cout << "Found " << possibilities.size() << " dices." << endl;
 
 }

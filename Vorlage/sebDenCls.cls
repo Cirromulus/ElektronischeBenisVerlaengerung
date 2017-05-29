@@ -127,6 +127,7 @@
 
 
 \renewcommand\thesection{Aufgabe \arabic{section}}
+\renewcommand\thesubsection{\arabic{subsection}}
 
 \def\ccode{\@ifstar{\@bccode}{\@accode}}
 \def\@accode[#1,#2,#3]{\lstinputlisting[linerange={#2-#3},firstnumber=#2]{#1}}

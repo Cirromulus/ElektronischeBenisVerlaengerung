@@ -1,27 +1,31 @@
-\documentclass{../Vorlage/mat}
+\documentclass{../Vorlage/sebDenCls}
 
 \begin{document}
-\maketitle{Sebastian Bliefert, Lukas Bertram}{}{Pascal Pieper, Johannes Hochbein}{}{}{}{XX.XX.2017}{1} \\
+\fach{Elektronische Bildverarbeitung}
+\nr{1}
+\abgabe{30.05.2017}
+\semester{SoSe17}
+\blatt{Udo Frese}{Lukas Bertram}{Sebastian Bliefert}{Johannes Hochbein}{Pascal Pieper}
 
-\section*{Aufgabe 1}
+\section{}
 \subsection{Gesamtkonzept}
-Um die Würfel im versuchsaufbau zu zählen, wird das Eingagebild zunächst anhand der Farben aufgeteilt, da die einzelnen Würfelfarben einen guten Farbkontrast zum Behälter aufweisen. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese 
+Um die Würfel im versuchsaufbau zu zählen, wird das Eingagebild zunächst anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese füllt den Hintergrund 
 
 
 \subsection{Teilalgorithmen}
-\subsubsection{void seperateDiceColors(Mat& image, Mat& display, vector<Dice>& dices)}
+\subsubsection{void seperateDiceColors(Mat\& image, Mat\& display, vector $<$Dice$>$\& dices)}
 \begin{itemize}
-	\item Mat& image: Verweis auf das Eingabebild
-	\item Mat& display: Verweis auf das zur Anzeige verwendete Bild
-	\item vector<Dice>& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item Mat\& image: Verweis auf das Eingabebild
+	\item Mat\& display: Verweis auf das zur Anzeige verwendete Bild 
+	\item vector<Dice>\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
 \end{itemize}
 Die Funktion seperateDiceColors extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft segmentAndRecognizeFromBinImage() für jedes der Ergebnisbilder auf.
 Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertiert und anschließend mithilfe der openCV Funktion "inRange()" auf das für die einzelnen Würfelfarben relevante Spektrum begrenzt und binarisiert. 
 
-\subsubsection{void segmentAndRecognizeFromBinImage(Mat& image, vector<Dice>& dices)}
+\subsubsection{void segmentAndRecognizeFromBinImage(Mat\& image, vector$<$Dice$>$\& dices)}
 \begin{itemize}
-	\item Mat& image: Verweis auf das Eingabebild
-	\item vector<Dice>& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item Mat\& image: Verweis auf das Eingabebild
+	\item vector<Dice>\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
 \end{itemize}
 Ausfüllen der einzelnen Würfel: Hinterrund füllen, ergbnis invertieren. für Watershed
 

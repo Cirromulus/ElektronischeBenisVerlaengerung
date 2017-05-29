@@ -30,7 +30,7 @@
 
 \renewcommand{\maketitle}[8]
           {\@maketitle{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}}
-\renewcommand\thesection{\alph{section})}
+%\renewcommand\thesection{\alph{section}}
 
 \renewcommand{\@maketitle}[9]
 {\begin{tabular}{p{7cm}|r}

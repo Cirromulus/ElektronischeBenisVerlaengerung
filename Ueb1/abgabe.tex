@@ -9,7 +9,7 @@
 
 \section{}
 \subsection{Gesamtkonzept}
-Um die Würfel im versuchsaufbau zu zählen, wird das Eingagebild zunächst anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese füllt den Hintergrund 
+Um die Würfel im Versuchsaufbau zu zählen, wird das Eingagebild zunächst anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese ermittelt annährend die geometrischen Mittelpunkte der segmentierten (Würfel-)flächen und nutzt diese Informationen zur Trennung der einzelnen Würfel mithilfe des "watershed"-Agorithmus. Anschließend werden die innerhalb der separierten Würfelflächen vorhandenen Augen mithilfe eines "blob detectors" gezählt und in der Statistik der Augenverteilung erfasst.
 
 
 \subsection{Teilalgorithmen}

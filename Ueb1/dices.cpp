@@ -172,7 +172,7 @@ ostream& operator<< (std::ostream& stream, const vector<Dice>& dices) {
 /**
  * @brief Adjusts contrast and brightness to the MAX
  */
-void increaseBetterfulness(Mat &img, double highestValue){
+void preprocessColors(Mat &img, double highestValue){
 	double min, max;
 	minMaxLoc(img, &min, &max);
 	double factor = highestValue / (max - min);
@@ -577,7 +577,7 @@ int main( int argc, char** argv )
        Mat display = imread( filename, CV_LOAD_IMAGE_COLOR );
        makeImageDarker (display);
        cout << type2str(display.type()) << endl;
-       increaseBetterfulness(display, 255);
+       preprocessColors(display, 255);
 
        vector<Dice> dices;
        findDices (src, display, dices);

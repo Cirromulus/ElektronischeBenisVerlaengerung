@@ -18,7 +18,7 @@ using namespace cv;
 // the size below.
 int windowWidth = 1200, windowHeight = 600;
 
-bool debug = true;
+bool debug = false;
 
 string windowname = "Dice Production QA";
 
@@ -170,6 +170,21 @@ ostream& operator<< (std::ostream& stream, const vector<Dice>& dices) {
 }
 
 /**
+ * @brief Adjusts contrast and brightness to the MAX
+ */
+void increaseBetterfulness(Mat &img, double highestValue){
+	double min, max;
+	minMaxLoc(img, &min, &max);
+	double factor = highestValue / (max - min);
+	Vec3b offs(-min, -min, -min);
+    for( int y = 0; y < img.rows; y++ ) {
+        for( int x = 0; x < img.cols; x++ ) {
+                img.at<Vec3b>(y,x) =  factor*(img.at<Vec3b>(y,x)) + offs;	//screw that
+        }
+    }
+}
+
+/**
  * @brief counts blobs as dark circles inside a white area.
  */
 Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Point>& approx){
@@ -221,16 +236,20 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	d.detect(cropped, keypoints);
 
 // 	cout << br;
-	if(keypoints.size() == 0 || keypoints.size() > 6){
+	if(keypoints.size() > 6){
 		cout << " Could not detect correctly at " << elem.center << "(" << keypoints.size() << ")" << endl;
+		return Dice(elem.center, keypoints.size());
+	}else if(keypoints.size() == 0){
+		cout << " Could not detect correctly at " << elem.center << "(" << keypoints.size() << ")" << endl;
+		return Dice(Point(0,0), 0);
+	}else{
+		return Dice(elem.center, keypoints.size());
 	}
 // 	cout << " found " << keypoints.size() << " eyes." << endl;
 //  cout << "Number: " << keypoints.size() << endl;
 // 	drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 // 	if(debug) showScaled("D", cropped);
 // 	waitKey(1000);
-
-	return Dice(elem.center, keypoints.size());
 }
 
 
@@ -315,11 +334,10 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices){
 	Mat im_floodfill_inv;
 	bitwise_not(im_floodfill, im_floodfill_inv);
 	if(debug) showScaled("im_floddfill_inv vorher", im_floodfill_inv);
-	bool repeat;
+	bool repeat = false;
 	Mat markers;
 	vector<vector<Point> > contours;
 	do{
-		repeat = false;
 		// Combine the two images to get the foreground.
 		Mat filled = (binImage | im_floodfill_inv);
 		// Perform the distance transform algorithm
@@ -366,6 +384,8 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices){
 			cout << "Detected less than 2 dices, retrying harder..." << endl;
 			cleanupFloodfill(im_floodfill_inv);
 			repeat = true;
+		}else{
+			repeat = false;
 		}
 	}while(repeat);
 
@@ -377,7 +397,6 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices){
 	SimpleBlobDetector detector(params);
 	vector<RotatedRect> possibilities;
 	cvtColor(binImage, binImage, CV_GRAY2RGB);
-	if(debug) waitKey();
 	for(int i = 1; i <= contours.size(); i++){
 		//New Image masked with just one found element
 		Mat singleElem = markers == i;
@@ -416,24 +435,81 @@ void seperateDiceColors(Mat& image, Mat& display, vector<Dice>& dices){
     Mat hsv;
     cvtColor(image, hsv, CV_BGR2HSV);
     
-	unsigned char RETR = CV_RETR_FLOODFILL, CHAIN = CV_CHAIN_APPROX_TC89_KCOS ;
+	unsigned char hueL = 0, hueH = 180, satL = 0, satH = 68, valueL = 169, valueH = 255;
+	int inc = 5;
+	char key = '1';
+	do{
+		dices.clear();	//FIXME only for debug
+		switch(key){
+		case '\n':
+			continue;
+		case '1':
+			inc -= 1;
+			break;
+		case '2':
+			inc += 1;
+			break;
+		case 'w':
+			valueH += inc;
+			break;
+		case 's':
+			valueH -= inc;
+			break;
+		case 'e':
+			valueL += inc;
+			break;
+		case 'd':
+			valueL -= inc;
+			break;
+		case 'r':
+			hueH += inc;
+			break;
+		case 'f':
+			hueH -= inc;
+			break;
+		case 'u':
+			hueL += inc;
+			break;
+		case 'j':
+			hueL -= inc;
+			break;
+		case 'i':
+			satH += inc;
+			break;
+		case 'k':
+			satH -= inc;
+			break;
+		case 'o':
+			satL += inc;
+			break;
+		case 'l':
+			satL -= inc;
+			break;
+		default:
+			cout << "Fucktard\n";
+		}
 
-	Rect rect(0, 0, image.size().width * 0.77, image.size().height * 0.9);
+		Rect rect(0, 0, image.size().width * 0.77, image.size().height * 0.9);
 
-//  inRange(hsv, Scalar(yl, bl, wl), Scalar(yh, bh, wh), blue_bin);
+	//  inRange(hsv, Scalar(yl, bl, wl), Scalar(yh, bh, wh), blue_bin);
 
-	inRange(hsv, Scalar(0, 0, 175), Scalar(180, 75, 255), white_bin);    //WHITE
-	Mat white_crop = white_bin(rect);                                    //WHITE_CROPPED
-	inRange(hsv, Scalar(0, 75, 160), Scalar(50, 255, 255), yellow_bin);  //YELLOW
-	Mat yellow_crop = yellow_bin(rect);                                  //YELLOW_CROPPED
-	inRange(hsv, Scalar(100, 60, 90), Scalar(120, 255, 185), blue_bin);  //BLUE
-	Mat blue_crop = blue_bin(rect);                                      //BLUE_CROPPED
+		inRange(hsv, Scalar(100, 60, 90), Scalar(120, 255, 185), blue_bin);  //BLUE
+		Mat blue_crop = blue_bin(rect);                                      //BLUE_CROPPED
+		inRange(hsv, Scalar(0, 0, 169), Scalar(180, 68, 255), white_bin);    //WHITE
+		//inRange(hsv, Scalar(hueL, satL, valueL), Scalar(hueH, satH, valueH), white_bin);    //WHITE
+		Mat white_crop = white_bin(rect);                                    //WHITE_CROPPED
+		inRange(hsv, Scalar(0, 75, 160), Scalar(50, 255, 255), yellow_bin);  //YELLOW
+		Mat yellow_crop = yellow_bin(rect);                                  //YELLOW_CROPPED
 
-	segmentAndRecognizeFromBinImage(blue_crop, dices);
-	segmentAndRecognizeFromBinImage(white_crop, dices);
-	segmentAndRecognizeFromBinImage(yellow_crop, dices);
-	//draw (blue_crop, dices);
-	if(debug) showScaled("test", blue_crop);
+		segmentAndRecognizeFromBinImage(blue_crop, dices);
+		segmentAndRecognizeFromBinImage(white_crop, dices);
+		segmentAndRecognizeFromBinImage(yellow_crop, dices);
+		//draw (blue_crop, dices);
+		if(debug) showScaled("test", white_crop);
+		if(debug) printf("s: %d, l: %u %u %u, h: %u %u %u\n", inc, hueL, satL, valueL, hueH, satH, valueH);
+
+		if(debug) waitKey();
+    }while(debug && (key = getchar()) != 'q');
 }
 
 /**
@@ -500,7 +576,8 @@ int main( int argc, char** argv )
        Mat src = imread( filename, CV_LOAD_IMAGE_COLOR );
        Mat display = imread( filename, CV_LOAD_IMAGE_COLOR );
        makeImageDarker (display);
-
+       cout << type2str(display.type()) << endl;
+       increaseBetterfulness(display, 255);
 
        vector<Dice> dices;
        findDices (src, display, dices);

@@ -18,7 +18,7 @@ using namespace cv;
 // the size below.
 int windowWidth = 1200, windowHeight = 600;
 
-bool debug = false;
+bool debug = true;
 
 string windowname = "Dice Production QA";
 
@@ -436,9 +436,13 @@ void seperateDiceColors(Mat& image, Mat& display, vector<Dice>& dices){
 	if(debug) showScaled("test", blue_crop);
 }
 
-//! Recognizes all dices in images and returns them in dices
-//! display is passed, just in case you want to show something
-//! for debugging reasons
+/**
+ * @brief Finds dices
+ * @param image input image
+ * Recognizes all dices in images and returns them in dices
+ * display is passed, just in case you want to show something
+ * for debugging reasons
+ */
 void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
 	seperateDiceColors(image, display, dices);
 }

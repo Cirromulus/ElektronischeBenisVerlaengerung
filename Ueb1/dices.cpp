@@ -273,7 +273,7 @@ void cleanupFloodfill(Mat& floodfill){
 	Mat temp_image;
 	floodfill.copyTo(temp_image);					//Slow but necessary
 	findContours(temp_image, flood_contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-	// Find indices of contours whose area is wrong
+	// Find indices of contours whose areas are the wrong size
 	if ( !flood_contours.empty()) {
 	    for (size_t i=0; i<flood_contours.size(); ++i) {
 	        double area = contourArea(flood_contours[i]);
@@ -300,13 +300,12 @@ void cleanupFloodfill(Mat& floodfill){
 }
 
 /**
- * @brief Segments a binimage by watershed and applies countBlobs on each found FG Element
+ * @brief Segments a binary image by watershed and applies countBlobs on each found foreground Element
  *
  * May contain some Sources found in http://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
  */
-void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& erosion_size){
-    int dilatation_size = 3;
-	// Floodfill from point (0, 0)
+void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices){
+    // Floodfill from point (0, 0)
 	Mat im_floodfill = binImage.clone();
 
 
@@ -404,7 +403,12 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices, int& er
 
 /********** BELOW HERE TODOs ******************************/
 
-void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
+/* @brief extracts and binarizes pixels relevant to each dice color from "image" by inRange function
+ * (conversion to hsv beforehand). Calls segmentAndRecognizeFromBinImage for every
+ * result
+ *
+ *  */
+void seperateDiceColors(Mat& image, Mat& display, vector<Dice>& dices){
 	Mat yellow_bin;
     Mat blue_bin;
     Mat white_bin;
@@ -413,7 +417,6 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
     cvtColor(image, hsv, CV_BGR2HSV);
     
 	unsigned char RETR = CV_RETR_FLOODFILL, CHAIN = CV_CHAIN_APPROX_TC89_KCOS ;
-	int erosion_size = 6;
 
 	Rect rect(0, 0, image.size().width * 0.77, image.size().height * 0.9);
 
@@ -426,9 +429,9 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 	inRange(hsv, Scalar(100, 60, 90), Scalar(120, 255, 185), blue_bin);  //BLUE
 	Mat blue_crop = blue_bin(rect);                                      //BLUE_CROPPED
 
-	segmentAndRecognizeFromBinImage(blue_crop, dices, erosion_size);
-	segmentAndRecognizeFromBinImage(white_crop, dices, erosion_size);
-	segmentAndRecognizeFromBinImage(yellow_crop, dices, erosion_size);
+	segmentAndRecognizeFromBinImage(blue_crop, dices);
+	segmentAndRecognizeFromBinImage(white_crop, dices);
+	segmentAndRecognizeFromBinImage(yellow_crop, dices);
 	//draw (blue_crop, dices);
 	if(debug) showScaled("test", blue_crop);
 }
@@ -437,7 +440,7 @@ void segmentDices(Mat& image, Mat& display, vector<Dice>& dices){
 //! display is passed, just in case you want to show something
 //! for debugging reasons
 void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
-	segmentDices(image, display, dices);
+	seperateDiceColors(image, display, dices);
 }
 
 void addToStatistics (vector<int>& statistics, const vector<Dice>& dices)

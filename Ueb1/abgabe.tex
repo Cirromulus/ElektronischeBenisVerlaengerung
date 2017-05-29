@@ -4,21 +4,34 @@
 \maketitle{Sebastian Bliefert, Lukas Bertram}{}{Pascal Pieper, Johannes Hochbein}{}{}{}{XX.XX.2017}{1} \\
 
 \section*{Aufgabe 1}
-Ja.
+\subsection{Gesamtkonzept}
+Um die Würfel im versuchsaufbau zu zählen, wird das Eingagebild zunächst anhand der Farben aufgeteilt, da die einzelnen Würfelfarben einen guten Farbkontrast zum Behälter aufweisen. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese 
 
-TODO: 
--HSV wandlung
--thresholds für Farben finden
--Konzept aufschreiben
--Textaufgabe vom Schluss
--Optimierung (eher egal)
+
+\subsection{Teilalgorithmen}
+\subsubsection{void seperateDiceColors(Mat& image, Mat& display, vector<Dice>& dices)}
+\begin{itemize}
+	\item Mat& image: Verweis auf das Eingabebild
+	\item Mat& display: Verweis auf das zur Anzeige verwendete Bild
+	\item vector<Dice>& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+\end{itemize}
+Die Funktion seperateDiceColors extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft segmentAndRecognizeFromBinImage() für jedes der Ergebnisbilder auf.
+Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertiert und anschließend mithilfe der openCV Funktion "inRange()" auf das für die einzelnen Würfelfarben relevante Spektrum begrenzt und binarisiert. 
+
+\subsubsection{void segmentAndRecognizeFromBinImage(Mat& image, vector<Dice>& dices)}
+\begin{itemize}
+	\item Mat& image: Verweis auf das Eingabebild
+	\item vector<Dice>& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+\end{itemize}
+Ausfüllen der einzelnen Würfel: Hinterrund füllen, ergbnis invertieren. für Watershed
+
 
 \section*{Aufgabe 3}
 
-Konzept:
+\subsection{Konzept:}
 Der Keratograf sendet ein definiertes Muster aus konzentrischen, abwechselnd schwarzen und weißen Kreisen in Richtung Auge. Je nach Position des Auges vor dem Keratografen ergibt sich eine entsprechende Spiegelung der Ringe auf der Oberfläche der Hornhaut. Die Kamera ist im Zentrum des Keratografen platziert und nimmt das Bild der Spiegelung auf. Nach Bestimmung des gemeinsamen Mittelpunkts der Kreise wird der Abstand der Übergänge von Schwarz zu Weiß und von Weiß zu Schwarz entlang eines radialen Schnitts vermessen. Dazu wird eine Halbgerade festgelegt, die zunächst horizontal durch den Mittelpunkt verläuft und in diesem beginnt. Mit definierter Schrittweite wird der Schnittpunkt der Geraden mit einem fiktiven, zum Mittelpunkt konzentrischen Kreis auf diesem Kreis umlaufend verschoben. In jedem Zyklus werden nach einem "Weiterdrehen" alle Kanten in zur Halbgeraden senkrechter Richtung zunächst gefunden und dann in ihrem Abstand zum Mittelpunkt (Beginn der Halbgeraden und damit Urpsrung des zur Vermessung genutzten Koordinatensystems) vermessen. 
 
-Bewertung der Messwerte:
+\subsection{Bewertung der Messwerte:}
 Der theoretisch perfekte Abstand zwischen den Kanten ist bekannt für eine perfekt kugelfömige Honrhaut. Die Differenzen zwischen den theoretischen und den tatsächlich gemessenen Abständen gibt Aufschluss über die Form der Hornhaut: 
 - Ist der gemessene Abstand kleiner als der theoretisch erwartete Wert, so ist die Hornhaut an dieser Stelle konkaver als die perfekte Kugel.
 - Ist größer als der theoretisch erwartete Wert, so ist die Hornhaut an dieser Stelle konvexer als die perfekte Kugel.

@@ -76,7 +76,7 @@ Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertie
 
 
 Mithilfe dieses Bildes werden die \glqq Schwerpunkte\grqq  der Würfelflächen unter Verwendung des durch den distanceTransform-Algorithmus generierten Bilds (Abb. \ref{distance}) bestimmt: Das Ergebnisbild (8 Bit Graustufen) wird durch Anwendung eines Schwellwerts, Dilatation und anschließender Konturfindung überführt in einen Vektor aus Markern, die die \glqq Schwerpunkte\grqq  der Würfel repräsentieren. Mit \glqq Schwerpunkt\grqq  ist hier das Maximum der Entfernungen eines jeden Pixels innerhalb der Würfelfläche zum Rand der Fläche gemeint. 
-Die so gewonnen Marker )Abb.  werden als Startpunkte für den Watershed-Algorithmus gebraucht, welcher die eigentliche Segmentierung der einzelnen Würfel vornimmt. Dazu füllt der Algorithmus das Eingabebild anhand der Marker in alle Richtungen auf, bis sich die einzelnen Füllgebiete entweder treffen oder der Hintergrund den Füllvorgang begrenzt (genauere Informationen zu \texttt{watershed(...)} unter \cite{opCV15}) und stellt die Konturen der so gefundenen Gebiete zur Verfügung (siehe Abb. \ref{watershed}). 
+Die so gewonnen Marker (siehe Abb.\ref{heightmap})  werden als Startpunkte für den Watershed-Algorithmus gebraucht, welcher die eigentliche Segmentierung der einzelnen Würfel vornimmt. Dazu füllt der Algorithmus das Eingabebild anhand der Marker in alle Richtungen auf, bis sich die einzelnen Füllgebiete entweder treffen oder der Hintergrund den Füllvorgang begrenzt (genauere Informationen zu \texttt{watershed(...)} unter \cite{opCV15}) und stellt die Konturen der so gefundenen Gebiete zur Verfügung (siehe Abb. \ref{watershed}). 
 Aus jeder dieser Konturen wird mit\texttt{ minAreaRect(...)} das für die Augenzählung relevante Gebiet bestimmt und zusammen mit weiteren Parametern an \emph{countBlobs(...)} übergeben (siehe Abb. \ref{result}). Zusätzlich wird jeder gefundene Würfel im Vektor \emph{dices} für spätere Operationen abgelegt.
 
 \subsubsection{Dice countBlobs(SimpleBlobDetector\& d, Mat\& orig, RotatedRect\& elem, vector$<$Point$>$\& approx)}
@@ -86,35 +86,35 @@ Aus jeder dieser Konturen wird mit\texttt{ minAreaRect(...)} das für die Augenz
 	\item \textbf{RotatedRect\& elem:} Referenz auf ein RotatedRect, das die Rotation des zu prüfenden Würfels repräsentiert
 	\item \textbf{vector$<$Point$>$\& approx:} Referenz auf die Position und Dimension des zu prüfenden Würfels
 \end{itemize}
-In dieser Funktion werden die Augen auf einem Würfel gezählt. Dazu wird der Würfel erst in eine einheitliche Position gedreht und durch Dilatation und Erosion sowohl rauschen entfernt als auch die einzelnen Augen sauber voneinander getrennt und stärker abgerundet. Dann wird der SimpleBlobDetector aus openCV eingesetzt. Dieser geht wie folgt vor (laut Dokumentation von openCV):\\
+In dieser Funktion werden die Augen auf einem Würfel gezählt. Dazu wird der Würfel erst in eine einheitliche Position gedreht und anschließend durch Dilatation und Erosion sowohl Rauschen entfernt als auch die einzelnen Augen sauber voneinander getrennt und stärker abgerundet. Dann wird der SimpleBlobDetector aus openCV eingesetzt. Dieser geht wie folgt vor (laut Dokumentation von openCV):\\
 \begin{enumerate}
-	\item Das Graustufenbild wird in anhand mehrer Schwellwerte, in einem zu übergebenen bereich, in mehrere Binärbilder überführt.
-	\item Durch einen Konturfindungsalgorithmus, der nicht näher spezifiziert ist, werden zueinandergehörige Teile des Bildes ermittelt und deren Zentrum berechnet.
+	\item Das Graustufenbild wird, anhand mehrerer Schwellwerte, in einem zu übergebenen Bereich, in mehrere Binärbilder überführt.
+	\item Durch einen Konturfindungsalgorithmus, der nicht näher spezifiziert ist, werden zueinander gehörige Teile des Bildes ermittelt und deren Zentrum berechnet.
 	\item Die einzelnen Zentren werden zu Gruppen zusammengefasst, indem näher als \texttt{minDistBetweenBlobs} (ein zu übergebender Parameter) beieinander liegende Zentren zusammengefasst werden.
 	\item Aus den erzeugten Gruppen werden nun wiederum die tatsächlichen Mittelpunkte und Radien der Blobs errechnet und zurückgegeben.
 \end{enumerate}
 
 \subsubsection{void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices)}
 \begin{itemize}
-	\item \textbf{vector$<$int$>$\& statistics:} Vector in dem die Würfel nach Augenzahl aufsummiert werden
-	\item \textbf{const vector$<$Dice$>$\& dices:} Vector mit allen erkannten Würfeln
+	\item \textbf{vector$<$int$>$\& statistics:} Referenz auf den Vektor, in dem die Würfel nach Augenzahl aufsummiert werden
+	\item \textbf{const vector$<$Dice$>$\& dices:}Referenz auf den Vektor mit allen erkannten Würfeln
 \end{itemize}
-void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices) itteriert alle gefundenen Würfel durch und zählt wie häufig die möglichen Augenzahlen vorgekommen sind.
+void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices) durchläuft den Vektor mit allen gefundenen Würfeln und zählt, wie häufig die möglichen Augenzahlen vorgekommen sind.
 
 Das Ergebnis wird in den Vektor statistics gespeichert.
 
 \subsubsection{bool passed (const vector$<$int$>$\& statistics)}
 \begin{itemize}
-	\item \textbf{const vector$<$int$>$\& statistics:} Vector mit den nach Augenzahl aufsummierten Würfeln
+	\item \textbf{const vector$<$int$>$\& statistics:} Vektor mit den nach Augenzahl aufsummierten Würfeln
 \end{itemize}
-bool passed (const vector$<$int$>$\& statistics) prüft ob die in den Vector aufsummierten Würfel normalverteilt sind. Hierbei Wird der Chi-Quadrat-Test mit einem Testniveau von 90\% zugrunde gelegt. \\
+bool passed (const vector$<$int$>$\& statistics) prüft ob die in den Vektor aufsummierten Würfel normalverteilt sind. Hierbei Wird der Chi-Quadrat-Test mit einem Testniveau von 90\% zugrunde gelegt. \\
 
 In unserem Fall erwarten wir, dass alle Würfel aus der Losgröße n gleichhäufig vorkommen:\\ 
-Erwartete häufigkeit je Augenzahl = ne = n/6.\\
+Erwartete Häufigkeit je Augenzahl = ne = n/6.\\
 
-x empirisch(xemp) ist nun die quadratische Abweichung der soll und ist Werte geteilt durch die erwarteten Werte. Hierdurch wirken sich Fehler ungeachtet des Vorzeichens gleich stark auf das Ergebnis aus. \\
+x empirisch(xemp) ist die quadratische Abweichung der Soll- und Istwerte geteilt durch die erwarteten Werte. Hierdurch wirken sich Fehler ungeachtet des Vorzeichens gleich stark auf das Ergebnis aus. \\
 
-Die Summe aller somit gebildeten Werte muss bei einem Testniveau von 90\% und 5 Freiheitsgraden unter 1,61 bleiben damit dieser Test bestanden wird und die Methode true als Rückgabe liefert.
+Die Summe aller somit gebildeten Werte muss bei einem Testniveau von 90\% und 5 Freiheitsgraden unter 1,61 bleiben, damit dieser Test bestanden wird und die Methode \texttt{true} als Rückgabe liefert.
 
 \section*{Aufgabe 2}
 

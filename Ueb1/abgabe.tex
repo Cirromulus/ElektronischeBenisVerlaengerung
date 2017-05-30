@@ -13,20 +13,21 @@
 
 \section{}
 \subsection{Gesamtkonzept}
-Um die Würfel im Versuchsaufbau zu zählen, wird das Eingabebild zunächst geeignet vorprozessiert und anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese ermittelt annähernd die geometrischen Mittelpunkte der segmentierten (Würfel-)flächen und nutzt diese Informationen zur Trennung der einzelnen Würfel mithilfe des \glqq watershed\grqq-Algorithmus. Anschließend werden die innerhalb der separierten Würfelflächen vorhandenen Augen mithilfe eines \glqq blob detectors\grqq  gezählt und in der Statistik der Augenverteilung erfasst.
+Um die Würfel im Versuchsaufbau zu zählen, wird das Eingabebild zunächst geeignet vorverarbeitet und anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese ermittelt annähernd die geometrischen Mittelpunkte der segmentierten (Würfel-)flächen und nutzt diese Informationen zur Trennung der einzelnen Würfel mithilfe des \glqq watershed\grqq-Algorithmus. Anschließend werden die innerhalb der separierten Würfelflächen vorhandenen Augen mithilfe eines \glqq blob detectors\grqq  gezählt und in der Statistik der Augenverteilung erfasst.
 
 \subsection{Teilalgorithmen}
 
 \subsubsection{void preprocessColors(Mat\&img, double highestValue))}
 \begin{itemize}
-	\item 
+	\item \textbf{Mat\& img:} Referenz auf das Eingabebild
+	\item \textbf{double highestValue:} Maximalwert, den die Farben annehmen können
 \end{itemize}
-tbd
+Diese Funktion macht eine Farbwertspreizung, sodass der gesamte Farbbereich abgedeckt wird um die Segmentierung anhand von Farbwerten zu vereinfachen.
 
 \subsubsection{void seperateDiceColors(Mat\& image, Mat\& display, vector $<$Dice$>$\& dices)}
 \begin{itemize}
-	\item \textbf{Mat\& image:} Verweis auf das Eingabebild
-	\item \textbf{Mat\& display}: Verweis auf das zur Anzeige verwendete Bild 
+	\item \textbf{Mat\& image:} Referenz auf das Eingabebild
+	\item \textbf{Mat\& display}: Referenz auf das zur Anzeige verwendete Bild 
 	\item \textbf{vector$<$Dice$>$\& dices}: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
 \end{itemize}
 Die Funktion \emph{seperateDiceColors(...)} extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft \emph{segmentAndRecognizeFromBinImage(...)} für jedes der Ergebnisbilder auf.
@@ -34,8 +35,8 @@ Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertie
 
 \subsubsection{void segmentAndRecognizeFromBinImage(Mat\& image, vector$<$Dice$>$\& dices)}
 \begin{itemize}
-	\item \textbf{Mat\& image}: Verweis auf das binäre Eingabebild
-	\item \textbf{vector$<$Dice$>$\& dices}: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item \textbf{Mat\& image}: Referenz auf das binäre Eingabebild
+	\item \textbf{vector$<$Dice$>$\& dices}: Referenz auf den, mit den gefundenen Würfeln zu füllenden, Vektor
 \end{itemize}
 
 

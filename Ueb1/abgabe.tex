@@ -13,22 +13,53 @@ Um die Würfel im Versuchsaufbau zu zählen, wird das Eingagebild zunächst anha
 
 
 \subsection{Teilalgorithmen}
+
+\subsubsection{void preprocessColors(Mat\&img, double highestValue))}
+\begin{itemize}
+	\item 
+\end{itemize}
+tbd
+
 \subsubsection{void seperateDiceColors(Mat\& image, Mat\& display, vector $<$Dice$>$\& dices)}
 \begin{itemize}
 	\item Mat\& image: Verweis auf das Eingabebild
 	\item Mat\& display: Verweis auf das zur Anzeige verwendete Bild 
-	\item vector<Dice>\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item vector$<$Dice$>$\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
 \end{itemize}
 Die Funktion seperateDiceColors extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft segmentAndRecognizeFromBinImage() für jedes der Ergebnisbilder auf.
 Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertiert und anschließend mithilfe der openCV Funktion "inRange()" auf das für die einzelnen Würfelfarben relevante Spektrum begrenzt und binarisiert. 
 
 \subsubsection{void segmentAndRecognizeFromBinImage(Mat\& image, vector$<$Dice$>$\& dices)}
 \begin{itemize}
-	\item Mat\& image: Verweis auf das Eingabebild
-	\item vector<Dice>\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item Mat\& image: Verweis auf das binäre Eingabebild
+	\item vector$<$Dice$>$\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
 \end{itemize}
-Ausfüllen der einzelnen Würfel: Hinterrund füllen, ergbnis invertieren. für Watershed
+segmentAndRecognizeFromBinImage(...) segmentiert einzelne Würfel aus dem Eingabebild. Dazu werden auf einer Arbeitskopie des Bildes zunächst die Würfelflächen vollständig mit weiß aufgefüllt (Hierfür Hintergrund per floodfill auffüllen, Ergebnis invertieren und auf das Eingabebild addieren), sodass die schwarzen Augen von den Würfelflächen verschwinden. Mithilfe dieses Bildes werden die "Schwerpunkte" der Würfelflächen unter Verwendung des durch den distanceTransform-Algorithmus generierten Bilds bestimmt: Das Ergebnisbild (8 Bit graustufen) wird via Threshold-Operation, Dilatation und anschließender Konturfindung überführt in einen Vektor aus Markern, die die "Schwerpunkte" der Würfel repräsentieren. Mit "Schwerpunkt" ist hier das Maximum der Entfernungen eines jeden Pixels innerhalb der Würfelfläche zum Rand der Fläche gemeint. \newline
+Die so gewonnen Marker werden als Startpunkte für den Watershed-Algorithmus gebraucht, welcher die eigentliche Segmentierung der einzelnen Würfel vornimmt. Dazu füllt der Algorithmus das Eingabebild anhand der Marker in alle Richtungen auf, bis sich die einzelnen Füllgebiete entweder treffen oder der Hintergrund den Füllvorgang begrenzt (genauere Informationen zu watershed(...) unter \cite{opCV15}) und stellt die Konturen der so gefundenen Gebiete zur Verfügung. Aus jeder dieser Konturen wird mit minAreaRect(...) das für die Augenzählung relevante Gebiet bestimmt und zusammen mit weiteren Parametern an countBlobs(...) übergeben. Zusätzlich wird jeder gefundene Würfel im Vektor "dices" für spätere Operationen abgelegt.
 
+\subsubsection{Dice countBlobs(SimpleBlobDetector\& d, Mat\& orig, RotatedRect\& elem, vector$<$Point$>$\& approx)}
+\begin{itemize}
+	\item 
+\end{itemize}
+tbd
+
+\subsubsection{void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices)}
+\begin{itemize}
+	\item 
+\end{itemize}
+tbd
+
+\subsubsection{bool passed (const vector$<$int$>$\& statistics)}
+\begin{itemize}
+	\item 
+\end{itemize}
+tbd
+
+\section*{Aufgabe 2}
+
+tbd.
+
+[CODE]
 
 \section*{Aufgabe 3}
 
@@ -40,4 +71,16 @@ Der theoretisch perfekte Abstand zwischen den Kanten ist bekannt für eine perfe
 - Ist der gemessene Abstand kleiner als der theoretisch erwartete Wert, so ist die Hornhaut an dieser Stelle konkaver als die perfekte Kugel.
 - Ist größer als der theoretisch erwartete Wert, so ist die Hornhaut an dieser Stelle konvexer als die perfekte Kugel.
 
+\begin{thebibliography}{9}
+	
+	\bibitem{opCV15}
+		OpenCV Documentation,
+		\emph{Image Segmentation with Watershed Algorithm},
+		\url{http://docs.opencv.org/3.1.0/d3/db4/tutorial_py_watershed.html},
+		abgerufen am 30.05.17, 12:00Uhr.
+	
+\end{thebibliography}
+
 \end{document}
+
+

@@ -3,7 +3,7 @@
 % modified for mathmatical proof by Dennis Hemker 2014
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{sebCls}[2014/04/28 Sebastian Hellmann, Dennis Hemker]
+\ProvidesClass{sebDenCls}[2014/04/28 Sebastian Hellmann, Dennis Hemker]
 \LoadClass[a4paper]{scrartcl}
 
 % -----------------------------------------------------------------------
@@ -136,6 +136,7 @@
 \usepackage{enumitem}
 \usepackage{amsmath}
 \usepackage{wasysym}
+\usepackage{url}
 
 %----added sose 2014--------------------------
 \newcommand{\abstand}{20ex}

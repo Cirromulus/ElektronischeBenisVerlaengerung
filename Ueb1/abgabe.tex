@@ -78,9 +78,18 @@ Aus jeder dieser Konturen wird mit\texttt{ minAreaRect(...)} das für die Augenz
 
 \subsubsection{Dice countBlobs(SimpleBlobDetector\& d, Mat\& orig, RotatedRect\& elem, vector$<$Point$>$\& approx)}
 \begin{itemize}
-	\item 
+	\item \textbf{SimpleBlobDetector\& d:} Referenz auf eine Instanz des openCV SimpleBlobDetectors
+	\item \textbf{Mat\& orig:} Referenz auf das Eingabebild (8 Bit Graustufen)
+	\item \textbf{RotatedRect\& elem:} Referenz auf ein RotatedRect, das die Rotation des zu prüfenden Würfels repräsentiert
+	\item \textbf{vector$<$Point$>$\& approx:} Referenz auf die Position und Dimension des zu prüfenden Würfels
 \end{itemize}
-tbd
+In dieser Funktion werden die Augen auf einem Würfel gezählt. Dazu wird der Würfel erst in eine einheitliche Position gedreht und durch Dilatation und Erosion sowohl rauschen entfernt als auch die einzelnen Augen sauber voneinander getrennt und stärker abgerundet. Dann wird der SimpleBlobDetector aus openCV eingesetzt. Dieser geht wie folgt vor (laut Dokumentation von openCV):\\
+\begin{enumerate}
+	\item Das Graustufenbild wird in anhand mehrer Schwellwerte, in einem zu übergebenen bereich, in mehrere Binärbilder überführt.
+	\item Durch einen Konturfindungsalgorithmus, der nicht näher spezifiziert ist, werden zueinandergehörige Teile des Bildes ermittelt und deren Zentrum berechnet.
+	\item Die einzelnen Zentren werden zu Gruppen zusammengefasst, indem näher als \texttt{minDistBetweenBlobs} (ein zu übergebender Parameter) beieinander liegende Zentren zusammengefasst werden.
+	\item Aus den erzeugten Gruppen werden nun wiederum die tatsächlichen Mittelpunkte und Radien der Blobs errechnet und zurückgegeben.
+\end{enumerate}
 
 \subsubsection{void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices)}
 \begin{itemize}

@@ -200,7 +200,6 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
     int dilatation_size = 7;
 	int erosion_size = 3;
 
-	//! This is not needed anymore
 	float angle = elem.angle;
 	Point2f offs(br.tl().x, br.tl().y);
 	Size rect_size = elem.size;
@@ -486,7 +485,7 @@ void seperateDiceColors(Mat& image, Mat& display, vector<Dice>& dices){
 			satL -= inc;
 			break;
 		default:
-			cout << "Fucktard\n";
+			cout << "Ungültige Eingabe\n";
 		}
 
 		Rect rect(0, 0, image.size().width * 0.77, image.size().height * 0.9);

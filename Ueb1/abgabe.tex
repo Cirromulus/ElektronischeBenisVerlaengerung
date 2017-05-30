@@ -1,4 +1,6 @@
 \documentclass{../Vorlage/sebDenCls}
+\usepackage{graphicx}
+\graphicspath{ {screenshots_documentation/} }
 
 \begin{document}
 \fach{Elektronische Bildverarbeitung}
@@ -9,8 +11,7 @@
 
 \section{}
 \subsection{Gesamtkonzept}
-Um die Würfel im Versuchsaufbau zu zählen, wird das Eingagebild zunächst anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese ermittelt annährend die geometrischen Mittelpunkte der segmentierten (Würfel-)flächen und nutzt diese Informationen zur Trennung der einzelnen Würfel mithilfe des "watershed"-Agorithmus. Anschließend werden die innerhalb der separierten Würfelflächen vorhandenen Augen mithilfe eines "blob detectors" gezählt und in der Statistik der Augenverteilung erfasst.
-
+Um die Würfel im Versuchsaufbau zu zählen, wird das Eingabebild zunächst geeignet vorprozessiert und anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese ermittelt annähernd die geometrischen Mittelpunkte der segmentierten (Würfel-)flächen und nutzt diese Informationen zur Trennung der einzelnen Würfel mithilfe des \glqq watershed\grqq-Algorithmus. Anschließend werden die innerhalb der separierten Würfelflächen vorhandenen Augen mithilfe eines \glqq blob detectors\grqq  gezählt und in der Statistik der Augenverteilung erfasst.
 
 \subsection{Teilalgorithmen}
 
@@ -22,20 +23,55 @@ tbd
 
 \subsubsection{void seperateDiceColors(Mat\& image, Mat\& display, vector $<$Dice$>$\& dices)}
 \begin{itemize}
-	\item Mat\& image: Verweis auf das Eingabebild
-	\item Mat\& display: Verweis auf das zur Anzeige verwendete Bild 
-	\item vector$<$Dice$>$\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item \textbf{Mat\& image:} Verweis auf das Eingabebild
+	\item \textbf{Mat\& display}: Verweis auf das zur Anzeige verwendete Bild 
+	\item \textbf{vector$<$Dice$>$\& dices}: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
 \end{itemize}
-Die Funktion seperateDiceColors extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft segmentAndRecognizeFromBinImage() für jedes der Ergebnisbilder auf.
-Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertiert und anschließend mithilfe der openCV Funktion "inRange()" auf das für die einzelnen Würfelfarben relevante Spektrum begrenzt und binarisiert. 
+Die Funktion \emph{seperateDiceColors(...)} extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft \emph{segmentAndRecognizeFromBinImage(...)} für jedes der Ergebnisbilder auf.
+Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertiert und anschließend mithilfe der openCV Funktion \glqq inRange()\grqq  auf das für die einzelnen Würfelfarben relevante Spektrum begrenzt und binarisiert. 
 
 \subsubsection{void segmentAndRecognizeFromBinImage(Mat\& image, vector$<$Dice$>$\& dices)}
 \begin{itemize}
-	\item Mat\& image: Verweis auf das binäre Eingabebild
-	\item vector$<$Dice$>$\& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item \textbf{Mat\& image}: Verweis auf das binäre Eingabebild
+	\item \textbf{vector$<$Dice$>$\& dices}: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
 \end{itemize}
-segmentAndRecognizeFromBinImage(...) segmentiert einzelne Würfel aus dem Eingabebild. Dazu werden auf einer Arbeitskopie des Bildes zunächst die Würfelflächen vollständig mit weiß aufgefüllt (Hierfür Hintergrund per floodfill auffüllen, Ergebnis invertieren und auf das Eingabebild addieren), sodass die schwarzen Augen von den Würfelflächen verschwinden. Mithilfe dieses Bildes werden die "Schwerpunkte" der Würfelflächen unter Verwendung des durch den distanceTransform-Algorithmus generierten Bilds bestimmt: Das Ergebnisbild (8 Bit graustufen) wird via Threshold-Operation, Dilatation und anschließender Konturfindung überführt in einen Vektor aus Markern, die die "Schwerpunkte" der Würfel repräsentieren. Mit "Schwerpunkt" ist hier das Maximum der Entfernungen eines jeden Pixels innerhalb der Würfelfläche zum Rand der Fläche gemeint. \newline
-Die so gewonnen Marker werden als Startpunkte für den Watershed-Algorithmus gebraucht, welcher die eigentliche Segmentierung der einzelnen Würfel vornimmt. Dazu füllt der Algorithmus das Eingabebild anhand der Marker in alle Richtungen auf, bis sich die einzelnen Füllgebiete entweder treffen oder der Hintergrund den Füllvorgang begrenzt (genauere Informationen zu watershed(...) unter \cite{opCV15}) und stellt die Konturen der so gefundenen Gebiete zur Verfügung. Aus jeder dieser Konturen wird mit minAreaRect(...) das für die Augenzählung relevante Gebiet bestimmt und zusammen mit weiteren Parametern an countBlobs(...) übergeben. Zusätzlich wird jeder gefundene Würfel im Vektor "dices" für spätere Operationen abgelegt.
+
+
+\emph{segmentAndRecognizeFromBinImage(...)} segmentiert einzelne Würfel aus dem Eingabebild. Dazu werden auf einer Arbeitskopie des Bildes zunächst die Würfelflächen vollständig mit Weiß aufgefüllt (Hierfür Hintergrund per floodfill(...) auffüllen, Ergebnis invertieren und auf das Eingabebild addieren), sodass die schwarzen Augen von den Würfelflächen verschwinden. 
+\newline
+
+\begin{figure}
+ \includegraphics[width=10cm]{filled} 
+ \centering 
+\end{figure}
+
+
+Mithilfe dieses Bildes werden die \glqq Schwerpunkte\grqq  der Würfelflächen unter Verwendung des durch den distanceTransform-Algorithmus generierten Bilds bestimmt: Das Ergebnisbild (8 Bit Graustufen) wird durch Anwendung eines Schwellwerts, Dilatation und anschließender Konturfindung überführt in einen Vektor aus Markern, die die \glqq Schwerpunkte\grqq  der Würfel repräsentieren. Mit \glqq Schwerpunkt\grqq  ist hier das Maximum der Entfernungen eines jeden Pixels innerhalb der Würfelfläche zum Rand der Fläche gemeint. \newline
+
+\begin{figure}
+	\includegraphics[width=10cm]{distanceTransform} 
+	\centering 
+\end{figure}
+
+\begin{figure}
+	\includegraphics[width=10cm]{peaks} 
+	\centering 
+\end{figure}
+
+Die so gewonnen Marker werden als Startpunkte für den Watershed-Algorithmus gebraucht, welcher die eigentliche Segmentierung der einzelnen Würfel vornimmt. Dazu füllt der Algorithmus das Eingabebild anhand der Marker in alle Richtungen auf, bis sich die einzelnen Füllgebiete entweder treffen oder der Hintergrund den Füllvorgang begrenzt (genauere Informationen zu watershed(...) unter \cite{opCV15}) und stellt die Konturen der so gefundenen Gebiete zur Verfügung. 
+
+\begin{figure}
+	\includegraphics[width=10cm]{watershed} 
+	\centering 
+\end{figure}
+
+Aus jeder dieser Konturen wird mit minAreaRect(...) das für die Augenzählung relevante Gebiet bestimmt und zusammen mit weiteren Parametern an \emph{countBlobs(...)} übergeben. Zusätzlich wird jeder gefundene Würfel im Vektor \emph{dices} für spätere Operationen abgelegt.
+
+\begin{figure}
+	\includegraphics[width=10cm]{blobAreas} 
+	\centering 
+\end{figure}
+
 
 \subsubsection{Dice countBlobs(SimpleBlobDetector\& d, Mat\& orig, RotatedRect\& elem, vector$<$Point$>$\& approx)}
 \begin{itemize}

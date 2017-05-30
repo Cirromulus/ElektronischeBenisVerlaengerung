@@ -93,15 +93,25 @@ In dieser Funktion werden die Augen auf einem Würfel gezählt. Dazu wird der W�
 
 \subsubsection{void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices)}
 \begin{itemize}
-	\item 
+	\item \textbf{vector$<$int$>$\& statistics:} Vector in dem die Würfel nach Augenzahl aufsummiert werden
+	\item \textbf{const vector$<$Dice$>$\& dices:} Vector mit allen erkannten Würfeln
 \end{itemize}
-tbd
+void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices) itteriert alle gefundenen Würfel durch und zählt wie häufig die möglichen Augenzahlen vorgekommen sind.
+
+Das Ergebnis wird in den Vektor statistics gespeichert.
 
 \subsubsection{bool passed (const vector$<$int$>$\& statistics)}
 \begin{itemize}
-	\item 
+	\item \textbf{const vector$<$int$>$\& statistics:} Vector mit den nach Augenzahl aufsummierten Würfeln
 \end{itemize}
-tbd
+bool passed (const vector$<$int$>$\& statistics) prüft ob die in den Vector aufsummierten Würfel normalverteilt sind. Hierbei Wird der Chi-Quadrat-Test mit einem Testniveau von 90\% zugrunde gelegt. \\
+
+In unserem Fall erwarten wir, dass alle Würfel aus der Losgröße n gleichhäufig vorkommen:\\ 
+Erwartete häufigkeit je Augenzahl = ne = n/6.\\
+
+x empirisch(xemp) ist nun die quadratische Abweichung der soll und ist Werte geteilt durch die erwarteten Werte. Hierdurch wirken sich Fehler ungeachtet des Vorzeichens gleich stark auf das Ergebnis aus. \\
+
+Die Summe aller somit gebildeten Werte muss bei einem Testniveau von 90\% und 5 Freiheitsgraden unter 1,61 bleiben damit dieser Test bestanden wird und die Methode true als Rückgabe liefert.
 
 \section*{Aufgabe 2}
 

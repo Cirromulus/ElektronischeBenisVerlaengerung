@@ -525,7 +525,7 @@ void findDices (Mat& image, Mat& display, vector<Dice>& dices) {
 void addToStatistics (vector<int>& statistics, const vector<Dice>& dices)
 {
     for (int i=0; i < dices.size(); i++) {
-        statistics[dices[i].eyes]++;
+        statistics[dices[i].eyes]++; //Zählt die Anzahl der Würfel in der jewailiegen Klasse
     }
 }
 
@@ -538,13 +538,13 @@ bool passed (const vector<int>& statistics) {
     int n = 0; 
     float xemp = 0;
     for (int i=1; i <= 6; i++) {
-        n = n+statistics[i];
+        n = n+statistics[i]; //Losgröße
     }
 
-    int ne = n/6;
+    int ne = n/6; //Erwartete Häufigkeit
 
     for (int i=1; i <= 6; i++) {
-        xemp = xemp + (pow((statistics[i]-ne), 2) / ne);
+        xemp = xemp + (pow((statistics[i]-ne), 2) / ne); //Xempirisch mit dazugehöriger Formel
         //std::cout << "DEBUG: xemp for " << i << " Augen = " << xemp << std::endl;
     }
     if (xemp < 1.61) { // 1,61 Ist ist die Grenze bei 5 Freiheitsgraden und einem 90% Testniveau

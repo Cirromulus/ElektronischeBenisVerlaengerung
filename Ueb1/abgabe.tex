@@ -1,30 +1,124 @@
-\documentclass{../Vorlage/mat}
+\documentclass{../Vorlage/sebDenCls}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\lstset{language=C++,basicstyle=\footnotesize}
+\graphicspath{ {screenshots_documentation/} }
 
 \begin{document}
-\maketitle{Sebastian Bliefert, Lukas Bertram}{}{Pascal Pieper, Johannes Hochbein}{}{}{}{XX.XX.2017}{1} \\
+\fach{Elektronische Bildverarbeitung}
+\nr{1}
+\abgabe{30.05.2017}
+\semester{SoSe17}
+\blatt{Udo Frese}{Lukas Bertram}{Sebastian Bliefert}{Johannes Hochbein}{Pascal Pieper}
 
-\section*{Aufgabe 1}
+
+\section{}
 \subsection{Gesamtkonzept}
-Um die Würfel im versuchsaufbau zu zählen, wird das Eingagebild zunächst anhand der Farben aufgeteilt, da die einzelnen Würfelfarben einen guten Farbkontrast zum Behälter aufweisen. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese 
-
+Um die Würfel im Versuchsaufbau zu zählen, wird das Eingabebild zunächst geeignet vorverarbeitet und anhand der Farben aufgeteilt. Die resultierenden Einzelbilder für jede Farbe werden binarisiert und anschließend einzeln der Würfelerkennung zugeführt. Diese ermittelt annähernd die geometrischen Mittelpunkte der segmentierten (Würfel-)flächen und nutzt diese Informationen zur Trennung der einzelnen Würfel mithilfe des \glqq watershed\grqq-Algorithmus. Anschließend werden die innerhalb der separierten Würfelflächen vorhandenen Augen mithilfe eines \glqq blob detectors\grqq  gezählt und in der Statistik der Augenverteilung erfasst.
 
 \subsection{Teilalgorithmen}
-\subsubsection{void seperateDiceColors(Mat& image, Mat& display, vector<Dice>& dices)}
-\begin{itemize}
-	\item Mat& image: Verweis auf das Eingabebild
-	\item Mat& display: Verweis auf das zur Anzeige verwendete Bild
-	\item vector<Dice>& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
-\end{itemize}
-Die Funktion seperateDiceColors extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft segmentAndRecognizeFromBinImage() für jedes der Ergebnisbilder auf.
-Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertiert und anschließend mithilfe der openCV Funktion "inRange()" auf das für die einzelnen Würfelfarben relevante Spektrum begrenzt und binarisiert. 
 
-\subsubsection{void segmentAndRecognizeFromBinImage(Mat& image, vector<Dice>& dices)}
+\subsubsection{void preprocessColors(Mat\&img, double highestValue))}
 \begin{itemize}
-	\item Mat& image: Verweis auf das Eingabebild
-	\item vector<Dice>& dices: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+	\item \textbf{Mat\& img:} Referenz auf das Eingabebild
+	\item \textbf{double highestValue:} Maximalwert, den die Farben annehmen können
 \end{itemize}
-Ausfüllen der einzelnen Würfel: Hinterrund füllen, ergbnis invertieren. für Watershed
+Diese Funktion macht eine Farbwertspreizung, sodass der gesamte Farbbereich abgedeckt wird um die Segmentierung anhand von Farbwerten zu vereinfachen.
 
+\subsubsection{void seperateDiceColors(Mat\& image, Mat\& display, vector $<$Dice$>$\& dices)}
+\begin{itemize}
+	\item \textbf{Mat\& image:} Referenz auf das Eingabebild
+	\item \textbf{Mat\& display}: Referenz auf das zur Anzeige verwendete Bild 
+	\item \textbf{vector$<$Dice$>$\& dices}: Verweis auf den mit den gefundenen Würfeln zu füllenden Vektor
+\end{itemize}
+Die Funktion \emph{seperateDiceColors(...)} extrahiert die für die einzelnen Würfelfarben relevanten Pixel aus dem Eingabebild und ruft \emph{segmentAndRecognizeFromBinImage(...)} für jedes der Ergebnisbilder auf.
+Für die Extraktion wird das Eingabebild zunächst in den HSV-Farbraum konvertiert und anschließend mithilfe der openCV Funktion \glqq inRange()\grqq  auf das für die einzelnen Würfelfarben relevante Spektrum begrenzt und binarisiert. 
+
+\subsubsection{void segmentAndRecognizeFromBinImage(Mat\& image, vector$<$Dice$>$\& dices)}
+\begin{itemize}
+	\item \textbf{Mat\& image}: Referenz auf das binäre Eingabebild
+	\item \textbf{vector$<$Dice$>$\& dices}: Referenz auf den, mit den gefundenen Würfeln zu füllenden, Vektor
+\end{itemize}
+
+
+\texttt{segmentAndRecognizeFromBinImage()} segmentiert einzelne Würfel aus dem Eingabebild. Dazu werden auf einer Arbeitskopie des Bildes zunächst die Würfelflächen vollständig mit Weiß aufgefüllt (Hierfür Hintergrund per \texttt{floodfill()}) auffüllen, Ergebnis invertieren und auf das Eingabebild addieren), sodass die schwarzen Augen von den Würfelflächen verschwinden (siehe Abb. \ref{BEISPIEL}). 
+
+\begin{figure}[htp]
+ \centering 	
+ \begin{subfigure}{0.5\textwidth}
+ 	 \includegraphics[width=.9\textwidth]{filled} 
+ 	 \caption{Filled image\label{BEISPIEL}}
+ \end{subfigure}%
+~
+ \begin{subfigure}{0.5\textwidth}
+ 	\includegraphics[width=.9\textwidth]{distanceTransform} 
+ 	\caption{Height map\label{distance}}
+ \end{subfigure}\\
+  \begin{subfigure}{0.5\textwidth}
+  	\includegraphics[width=.9\textwidth]{peaks} 
+  	\caption{Peaks of height map\label{heightmap}}
+  \end{subfigure}%
+  ~
+  \begin{subfigure}{0.5\textwidth}
+  	\includegraphics[width=.9\textwidth]{watershed} 
+  	\caption{Coloration of watershed output\label{watershed}}
+  \end{subfigure}\\
+
+\begin{subfigure}{\textwidth}
+	\centering
+	\includegraphics[width=.7\textwidth]{blobAreas} 
+	\caption{Found Elems marked in original segmented image\label{result}}
+\end{subfigure}\\
+  \caption{Workflow of algorithm}
+\end{figure}
+
+
+Mithilfe dieses Bildes werden die \glqq Schwerpunkte\grqq  der Würfelflächen unter Verwendung des durch den distanceTransform-Algorithmus generierten Bilds (Abb. \ref{distance}) bestimmt: Das Ergebnisbild (8 Bit Graustufen) wird durch Anwendung eines Schwellwerts, Dilatation und anschließender Konturfindung überführt in einen Vektor aus Markern, die die \glqq Schwerpunkte\grqq  der Würfel repräsentieren. Mit \glqq Schwerpunkt\grqq  ist hier das Maximum der Entfernungen eines jeden Pixels innerhalb der Würfelfläche zum Rand der Fläche gemeint. 
+Die so gewonnen Marker (siehe Abb.\ref{heightmap})  werden als Startpunkte für den Watershed-Algorithmus gebraucht, welcher die eigentliche Segmentierung der einzelnen Würfel vornimmt. Dazu füllt der Algorithmus das Eingabebild anhand der Marker in alle Richtungen auf, bis sich die einzelnen Füllgebiete entweder treffen oder der Hintergrund den Füllvorgang begrenzt (genauere Informationen zu \texttt{watershed(...)} unter \cite{opCV15}) und stellt die Konturen der so gefundenen Gebiete zur Verfügung (siehe Abb. \ref{watershed}). 
+Aus jeder dieser Konturen wird mit\texttt{ minAreaRect(...)} das für die Augenzählung relevante Gebiet bestimmt und zusammen mit weiteren Parametern an \emph{countBlobs(...)} übergeben (siehe Abb. \ref{result}). Zusätzlich wird jeder gefundene Würfel im Vektor \emph{dices} für spätere Operationen abgelegt.
+
+\subsubsection{Dice countBlobs(SimpleBlobDetector\& d, Mat\& orig, RotatedRect\& elem, vector$<$Point$>$\& approx)}
+\begin{itemize}
+	\item \textbf{SimpleBlobDetector\& d:} Referenz auf eine Instanz des openCV SimpleBlobDetectors
+	\item \textbf{Mat\& orig:} Referenz auf das Eingabebild (8 Bit Graustufen)
+	\item \textbf{RotatedRect\& elem:} Referenz auf ein RotatedRect, das die Rotation des zu prüfenden Würfels repräsentiert
+	\item \textbf{vector$<$Point$>$\& approx:} Referenz auf die Position und Dimension des zu prüfenden Würfels
+\end{itemize}
+In dieser Funktion werden die Augen auf einem Würfel gezählt. Dazu wird der Würfel erst in eine einheitliche Position gedreht und anschließend durch Dilatation und Erosion sowohl Rauschen entfernt als auch die einzelnen Augen sauber voneinander getrennt und stärker abgerundet. Dann wird der SimpleBlobDetector aus openCV eingesetzt. Dieser geht wie folgt vor (laut Dokumentation von openCV):\\
+\begin{enumerate}
+	\item Das Graustufenbild wird, anhand mehrerer Schwellwerte, in einem zu übergebenen Bereich, in mehrere Binärbilder überführt.
+	\item Durch einen Konturfindungsalgorithmus, der nicht näher spezifiziert ist, werden zueinander gehörige Teile des Bildes ermittelt und deren Zentrum berechnet.
+	\item Die einzelnen Zentren werden zu Gruppen zusammengefasst, indem näher als \texttt{minDistBetweenBlobs} (ein zu übergebender Parameter) beieinander liegende Zentren zusammengefasst werden.
+	\item Aus den erzeugten Gruppen werden nun wiederum die tatsächlichen Mittelpunkte und Radien der Blobs errechnet und zurückgegeben.
+\end{enumerate}
+
+\subsubsection{void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices)}
+\begin{itemize}
+	\item \textbf{vector$<$int$>$\& statistics:} Referenz auf den Vektor, in dem die Würfel nach Augenzahl aufsummiert werden
+	\item \textbf{const vector$<$Dice$>$\& dices:}Referenz auf den Vektor mit allen erkannten Würfeln
+\end{itemize}
+void addToStatistics (vector$<$int$>$\& statistics, const vector$<$Dice$>$\& dices) durchläuft den Vektor mit allen gefundenen Würfeln und zählt, wie häufig die möglichen Augenzahlen vorgekommen sind.
+
+Das Ergebnis wird in den Vektor statistics gespeichert.
+
+\subsubsection{bool passed (const vector$<$int$>$\& statistics)}
+\begin{itemize}
+	\item \textbf{const vector$<$int$>$\& statistics:} Vektor mit den nach Augenzahl aufsummierten Würfeln
+\end{itemize}
+bool passed (const vector$<$int$>$\& statistics) prüft ob die in den Vektor aufsummierten Würfel normalverteilt sind. Hierbei Wird der Chi-Quadrat-Test mit einem Testniveau von 90\% zugrunde gelegt. \\
+
+In unserem Fall erwarten wir, dass alle Würfel aus der Losgröße n gleichhäufig vorkommen:\\ 
+Erwartete Häufigkeit je Augenzahl = ne = n/6.\\
+
+x empirisch(xemp) ist die quadratische Abweichung der Soll- und Istwerte geteilt durch die erwarteten Werte. Hierdurch wirken sich Fehler ungeachtet des Vorzeichens gleich stark auf das Ergebnis aus. \\
+
+Die Summe aller somit gebildeten Werte muss bei einem Testniveau von 90\% und 5 Freiheitsgraden unter 1,61 bleiben, damit dieser Test bestanden wird und die Methode \texttt{true} als Rückgabe liefert.
+
+\section*{Aufgabe 2}
+
+\lstinputlisting{dices.cpp}
 
 \section*{Aufgabe 3}
 
@@ -36,4 +130,16 @@ Der theoretisch perfekte Abstand zwischen den Kanten ist bekannt für eine perfe
 - Ist der gemessene Abstand kleiner als der theoretisch erwartete Wert, so ist die Hornhaut an dieser Stelle konkaver als die perfekte Kugel.
 - Ist größer als der theoretisch erwartete Wert, so ist die Hornhaut an dieser Stelle konvexer als die perfekte Kugel.
 
+\begin{thebibliography}{9}
+	
+	\bibitem{opCV15}
+		OpenCV Documentation,
+		\emph{Image Segmentation with Watershed Algorithm},
+		\url{http://docs.opencv.org/3.1.0/d3/db4/tutorial_py_watershed.html},
+		abgerufen am 30.05.17, 12:00Uhr.
+	
+\end{thebibliography}
+
 \end{document}
+
+

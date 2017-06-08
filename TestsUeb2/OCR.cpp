@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
 
     namedWindow("recognition",WINDOW_NORMAL);
     bool downsize = false;
-    int  REGION_TYPE = 1;
+    int  REGION_TYPE = 0;
     int  GROUPING_ALGORITHM = 0;
     int  RECOGNITION = 0;
     char *region_types_str[2] = {const_cast<char *>("ERStats"), const_cast<char *>("MSER")};

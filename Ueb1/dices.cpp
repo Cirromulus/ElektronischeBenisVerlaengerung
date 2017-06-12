@@ -187,7 +187,7 @@ void preprocessColors(Mat &img, double highestValue){
 /**
  * @brief counts blobs as dark circles inside a white area.
  */
-Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Point>& approx){
+Dice countBlobs(SimpleBlobDetector *d, Mat& orig, RotatedRect& elem, vector<Point>& approx){
 	Mat bb, M, cropped;
 	//!Get bounding Rect of recognized shape
 	Rect br = boundingRect(Mat(approx));
@@ -232,9 +232,15 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
             );
 
 	std::vector<KeyPoint> keypoints;
-	d.detect(cropped, keypoints);
+	d->detect(cropped, keypoints);
 
 // 	cout << br;
+	if(debug) cout << " found " << keypoints.size() << " eyes." << endl;
+ 	if(debug) cout << "Number: " << keypoints.size() << endl;
+    if(debug) drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+ 	if(debug) showScaled("D", cropped);
+ 	if(debug) waitKey(500);
+
 	if(keypoints.size() > 6){
 		cout << " Could not detect correctly at " << elem.center << "(" << keypoints.size() << ")" << endl;
 		return Dice(elem.center, keypoints.size());
@@ -244,11 +250,6 @@ Dice countBlobs(SimpleBlobDetector& d, Mat& orig, RotatedRect& elem, vector<Poin
 	}else{
 		return Dice(elem.center, keypoints.size());
 	}
-// 	cout << " found " << keypoints.size() << " eyes." << endl;
-//  cout << "Number: " << keypoints.size() << endl;
-// 	drawKeypoints(cropped, keypoints, cropped, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-// 	if(debug) showScaled("D", cropped);
-// 	waitKey(1000);
 }
 
 
@@ -393,7 +394,7 @@ void segmentAndRecognizeFromBinImage(Mat& binImage, vector<Dice>& dices){
 	SimpleBlobDetector::Params params;
 	params.minThreshold = 0;
 	params.maxThreshold = 30;
-	SimpleBlobDetector detector(params);
+	Ptr<SimpleBlobDetector> detector = SimpleBlobDetector::create(params);
 	vector<RotatedRect> possibilities;
 	cvtColor(binImage, binImage, CV_GRAY2RGB);
 	for(int i = 1; i <= contours.size(); i++){

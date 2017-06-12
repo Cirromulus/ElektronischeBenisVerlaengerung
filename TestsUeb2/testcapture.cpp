@@ -14,7 +14,10 @@ int main( int argc, const char** argv )
     CvCapture* capture = 0;
     Mat frame, frameCopy, image;
 
-    capture = cvCaptureFromCAM( CV_CAP_ANY ); //0=default, -1=any camera, 1..99=your camera
+    int cam = CV_CAP_ANY;
+    if(argc > 1)
+	cam = atoi(argv[1]);
+    capture = cvCaptureFromCAM( cam ); //0=default, -1=any camera, 1..99=your camera
     if(!capture) cout << "No camera detected" << endl;
 
     cvNamedWindow( "result", CV_WINDOW_AUTOSIZE );

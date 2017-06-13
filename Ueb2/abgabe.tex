@@ -11,11 +11,11 @@
 \setcounter{section}{3}
 
 \begin{document}
-\fach{Elektronische Bildverarbeitung}
+\fach{Echtzeitbildverarbeitung}
 \nr{2}
 \abgabe{13.06.2017}
 \semester{SoSe17}
-\blatt{Udo Frese}{Lukas Bertram}{Sebastian Bliefert}{Johannes Hochbein}{Pascal Pieper}
+\blatt{Udo Frese}{Lukas Bertram}{(lbertram@uni-bremen.de)}{Sebastian Bliefert}{(bliefert@uni-bremen.de)}{Johannes Hochbein}{(hochbein@uni-bremen.de)}{Pascal Pieper}{(ppieper@uni-bremen.de)}
 
 
 \section{}
@@ -69,7 +69,7 @@ Interner Blitz: & aktiviert \\\hline
 \end{center}
 
 
-Der Fokus wurde manuell bei einer Entfernung von einem Meter eingestellt und danach nicht weiter verändert. 
+Der Fokus wurde manuell bei einer Entfernung von einem Meter auf das Nummernschild eingestellt und danach nicht weiter verändert. 
 
 \begin{figure}[htp]
 	\centering 	
@@ -89,11 +89,11 @@ Der Hardwareaufbau unseres Lösungsansatzes ist grundlegend bereits durch die Au
 Die Kamera wird in einer Höhe von 50-100cm montiert, zum Beispiel an einem Tor. Dabei ist sie aus Datenschutzgründen leicht nach unten gerichtet, sodass Fußgänger deutlich unterhalb des Kopfes abgeschnitten werden. Aufgrund des geringen Abstandes zum Fahrzeug sollte ein Weitwinkelobjektiv (bspw. 24mm) verwendet werden. Um ein ausreichend scharfes Bild zu gewährleisten, sollte mit möglichst kleiner Blende fotografiert werden, sodass eine ausreichende Tiefenschärfe gegeben ist. \\
 \\
 Zur Verringerung des Einflusses von Umgebungslicht verfügt das System über eine eigene Lichtquelle, realisiert bspw. durch ein koaxiales Ringlicht. Bei ausreichender Beleuchtungsstärke kann so in Kombination mit einer möglichst kleinen Blende und kurzer Belichtungszeit der Anteil des Umgebungslichtes bei der Belichtung reduziert werden.\\
-Um den Einfluss von Fremdlicht noch weiter zu reduzieren und den störenden Einfluss der Beleuchtung auf die Verkehrsteilnehmer zu verringern, könnte die Verwendung einer Infrarotbeleuchtung in Kombination mit einem entsprechenden Bandpassfilter in Betracht gezogen werden. Im Kontext des Übungsprojektes wird vom Einsatz dieser Komponenten aber aufgrund von Materiallieferzeiten abgesehen.
+Um den Einfluss von Fremdlicht noch weiter zu reduzieren und den störenden Einfluss der Beleuchtung auf die Verkehrsteilnehmer zu verringern, könnte die Verwendung einer Infrarotbeleuchtung in Kombination mit einem entsprechenden Bandpassfilter in Betracht gezogen werden. Im Kontext des Übungsprojektes wird vom Einsatz dieser Komponenten aber aufgrund von Materiallieferzeiten abgesehen.\\
 \\
 Die Anordnung der Systemkomponenten hat den Vorteil, dass ankommende Fahrzeuge bereits in einer gewissen Distanz gesehen werden, so kann das Tor bereits geöffnet werden und es ergeben sich keine Wartezeiten. Sollten Schwierigkeiten bei der Erkennung entstehen, würde das Fahrzeug immer näher kommen und das Kennzeichen immer besser zu erkennen sein, sodass es bei Schwierigkeiten eventuell erst etwas später zu einer Erkennung kommt dies aber hauptsächlich einen Einfluss auf den „Komfort“ des Systems hat und nicht zu einen tatsächlichen Ausfall führt.
 
-Aus Gründen der Energiesparsamkeit und des Datneschutzes verwenden wir einen Trigger (zum Beispiel einen Ultraschalldistanzsensor), der im Distanzbereich von ein bis zwei Meter die Bilderkennung auslöst.\\
+Aus Gründen der Energiesparsamkeit und des Datenschutzes soll einen Trigger verwendet werden (zum Beispiel ein Ultraschalldistanzsensor), der im Distanzbereich von ein bis zwei Meter die Bilderfassung und -verarbeitung auslöst.\\
 \\
 \textbf{Algorithmen:}\\\\
 \begin{longtable}{lllp{4cm}}

@@ -30,15 +30,15 @@
 \thispagestyle{plain}
 
 % -----------------------------------------------------------------------
-% Macro für das Abgabeblatt
+% Macro fï¿½r das Abgabeblatt
 
-\newcommand{\blatt}[5]
+\newcommand{\blatt}[9]
 {
 \begin{tabular}[t]{lr}
   \begin{tabular}[t]{l}
     \fa\hspace{\abstand} \se\\ Dozent/Tutor: {#1}\\ \hspace{70ex} \\
     {\Huge\textsf{{\"Ubungsblatt} {\blattnr}}} %\hspace{10ex} \begin{tabular}{c|c|c|c|c|c}1&2&3&4&5&$\sum$\\\hline &&&&&\end{tabular}
-    % Bewertungskästchen
+    % Bewertungskï¿½stchen
     \\[1.5ex]
     {\Large L\"osungsvorschlag} \\[1ex]
     \ab
@@ -51,6 +51,10 @@
       {#3}\\
       {#4}\\
       {#5}\\
+      {#6}\\
+      {#7}\\
+      {#8}\\
+      {#9}\\
   \end{tabular} \\[2ex]
 \end{tabular}\\
 \rule{\linewidth}{1pt}
@@ -111,11 +115,11 @@
 %\setdatetoday 
 
 %Berechnet die Nummer des aktuellen Ãœbungsblattes aus dem Datum
-%Für die Blattnummer wird ein Counter erstellt, der bei dem Befehl \blattnr ausgelesen wird.
+%Fï¿½r die Blattnummer wird ein Counter erstellt, der bei dem Befehl \blattnr ausgelesen wird.
 %\newcounter{blattnr}
 %\setcounter{blattnr}{\intcalcDiv{\arabic{datenumber}-78108}{7}}
 
-% Es werden drei Counter erstellt, die mit dem Kommando darauf gesetzt werden. Sie stehen für das Abgabedatum.
+% Es werden drei Counter erstellt, die mit dem Kommando darauf gesetzt werden. Sie stehen fï¿½r das Abgabedatum.
 %\newcounter{abday}
 %\newcounter{abmonth}
 %\newcounter{abyear}
@@ -170,7 +174,7 @@
 
 % Ausgemustert
 %
-% - Erhöht die Anzahl der möglichen Tabs
+% - Erhï¿½ht die Anzahl der mï¿½glichen Tabs
 % \makeatletter\countdef\@maxtab=30\makeatother
-% - Machteinen etwas größeren Punkt in der mitte (wurde für den Clock-Hand-Algorythmus verwendet)
+% - Machteinen etwas grï¿½ï¿½eren Punkt in der mitte (wurde fï¿½r den Clock-Hand-Algorythmus verwendet)
 % \newcommand*{\lc}{\raisebox{-.35ex}{\scalebox{1.6}{$\cdot$}}}

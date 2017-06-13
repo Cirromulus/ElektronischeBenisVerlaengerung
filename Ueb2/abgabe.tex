@@ -1,0 +1,48 @@
+\documentclass{../Vorlage/sebDenCls}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{todo}
+\usepackage{longtable}
+\lstset{language=C++,basicstyle=\footnotesize}
+\graphicspath{ {screenshots_documentation/} }
+
+\setcounter{section}{3}
+
+\begin{document}
+\fach{Elektronische Bildverarbeitung}
+\nr{2}
+\abgabe{13.06.2017}
+\semester{SoSe17}
+\blatt{Udo Frese}{Lukas Bertram}{Sebastian Bliefert}{Johannes Hochbein}{Pascal Pieper}
+
+
+\section{}
+
+\section{}
+
+\section{}
+Der Hardwareaufbau unseres Lösungsansatzes ist grundlegend bereits durch die Aufgabenstellung definiert.\\
+Die Kamera wird in, in der Aufgabenstellung definierter Höhe, zum Beispiel an einem Tor angebracht. Dabei ist aus Datenschutzgründen sie leicht nach unten gerichtet, sodass Fußgänger deutlich unterhalb des Kopfes abgeschnitten werden. Ihr Schärfebereich wird auf ein bis zwei Meter abstand eingestellt. Beleuchtet wird mit einem Koaxialen Ringlicht.\\
+\\
+Aus Gründen der Energiesparsamkeit und des Datneschutzes verwenden wir einen Trigger (zum Beispiel einen Ultraschalldistanzsensor), der im Distanzbereich von ein bis zwei Meter die Bilderkennung auslöst.\\
+\\
+\textbf{Algorithmen:}\\\\
+\begin{longtable}{lllp{4cm}}
+\textbf{Methodenname} & \textbf{Eingabe} & \textbf{Ausgabe} & \textbf{Beschreibung}\\
+\hline
+cropImage & ein Bild & ein Bild & Die Seiten des Bildes werden abgeschnitten, da hier kein relevantes Material vorliegt.\\\hline
+preprocess & ein Bild & ein Bild & Helligkeit und Kontrast werden so angepasst, dass die Nummernschilder gut erkennbar sind\\\hline
+detectLines & ein Bild & mehrere Linien & Linien im Bild werden mittels geeignetem Liniendetektor (z.B. Hough-Linedetector) erkannt und ausgegeben\\\hline
+findPlates & mehrere Linien & mehrere Trapeze & Erkennen von Trapezen (also von potentiellen Nummernschildern)\\\hline
+cropPlate & ein Trapez, ein Bild & ein Bild & Schneide das eingegebene Bild so zu, dass das übergeben Trapez knapp enthalten ist.\\\hline
+dewarp & einTrapez, ein Bild & ein Bild & Entzerre das Nummernschild anhand des übergebenen Trapezes\\\hline
+getText & ein Bild & ein String & Finde Text im übergebenen Bild\\\hline
+lookupPlate & ein String & ein Integer & Nachschlagen des Nummernschildes in einer Datenbank o.Ä. und rückgabe der zugehörigen Eintrags-ID\\\hline
+act & ein Integer & nichts & Auslösen der hinterlegten Aktion wie zum Beispiel das öffnen eines Tores\\
+
+\end{longtable}
+\end{document}
+
+

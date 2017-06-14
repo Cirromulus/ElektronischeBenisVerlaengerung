@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( AcvProject )
+find_package( OpenCV )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( AcvProject acvproject.cpp )
+target_link_libraries( AcvProject ${OpenCV_LIBS} )

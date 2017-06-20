@@ -15,20 +15,21 @@ bool debug = false;
 
 string windowname = "License Recognization PLATOS";
 
-/**
- * @brief counts blobs as dark circles inside a white area.
- */
-
 /***************************************************************************/
 
 int main( int argc, char** argv )
 {
     if (argc==1) {
        cerr << "Usage" << endl;
-       cerr << "dices [image] ... [image]" << endl;
+       cerr << "dices [debug] [image] ... [image]" << endl;
        return 1;
     }
     int imageCtr = 0;
+    if(!strcmp(argv[1], "debug")){
+    	debug = true;
+    	imageCtr++;
+    	cout << "Debug mode active." << endl;
+    }
     namedWindow( windowname, WINDOW_AUTOSIZE );
     vector<int> statistics(7); // Entries 1..6, 0 is not needed
     while (imageCtr+1<argc) {

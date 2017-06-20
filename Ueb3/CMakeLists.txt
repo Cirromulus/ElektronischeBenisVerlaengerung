@@ -7,6 +7,7 @@ set(SOURCES
  	${CMAKE_CURRENT_SOURCE_DIR}/licenseRecognizer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/helpers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/hotShit.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ocrBackend.cpp
 )
 add_executable( licenseRecog ${SOURCES})
 target_link_libraries( licenseRecog ${OpenCV_LIBS} )

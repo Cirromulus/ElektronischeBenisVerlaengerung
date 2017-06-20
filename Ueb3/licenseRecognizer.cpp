@@ -46,7 +46,9 @@ int main( int argc, char** argv )
        tightPreprocessing(display);
        hardSegmentation(display, plateOutline);
        phatPerspectiveNormalizer(display, plateOutline, plateImg);
-       if((plateId = megaPlateRecognisation(plateImg)) > 0){
+       plateId = megaPlateRecognisation(plateImg);
+
+       if(plateId >= 0){
     	   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
        }else{
     	   cout << "No known Plate found." << endl;

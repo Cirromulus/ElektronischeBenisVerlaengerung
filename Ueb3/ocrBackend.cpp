@@ -28,7 +28,7 @@ vector<string> ocr(cv::Mat &grey){
     //This is our only channel, and we dont have to read inverted text
     channels.push_back(grey);
 
-    double t_d = (double)getTickCount();
+    //double t_d = (double)getTickCount();
     // Create ERFilter objects with the 1st and 2nd stage default classifiers
     Ptr<ERFilter> er_filter1 = createERFilterNM1(loadClassifierNM1("trained_classifierNM1.xml"),8,0.00015f,0.13f,0.2f,true,0.1f);
     Ptr<ERFilter> er_filter2 = createERFilterNM2(loadClassifierNM2("trained_classifierNM2.xml"),0.5);
@@ -41,7 +41,7 @@ vector<string> ocr(cv::Mat &grey){
         er_filter2->run(channels[c], regions[c]);
     }
 
-    cout << "TIME_REGION_DETECTION = " << ((double)getTickCount() - t_d)*1000/getTickFrequency() << endl;
+    //cout << "TIME_REGION_DETECTION = " << ((double)getTickCount() - t_d)*1000/getTickFrequency() << endl;
 
     Mat out_img_decomposition= Mat::zeros(color.rows+2, color.cols+2, CV_8UC1);
     vector<Vec2i> tmp_group;
@@ -69,7 +69,7 @@ vector<string> ocr(cv::Mat &grey){
 
     /*Text Recognition (OCR)*/
 
-    double t_r = (double)getTickCount();
+    //double t_r = (double)getTickCount();
     Ptr<OCRTesseract> ocr = OCRTesseract::create();
     //cout << "TIME_OCR_INITIALIZATION = " << ((double)getTickCount() - t_r)*1000/getTickFrequency() << endl;
     string output;
@@ -83,7 +83,7 @@ vector<string> ocr(cv::Mat &grey){
     float scale_font = (float)(2-scale_img)/1.4f;
     vector<string> words_detection;
 
-    t_r = (double)getTickCount();
+    //t_r = (double)getTickCount();
 
     vector<string> ret;
     for (int i=0; i<(int)nm_boxes.size(); i++)
@@ -106,9 +106,6 @@ vector<string> ocr(cv::Mat &grey){
 
         output.erase(remove(output.begin(), output.end(), '\n'), output.end());
         cout << "OCR output = \"" << output << "\" length = " << output.size() << endl;
-        for(auto text: words){
-        	cout << "Word: " << text << endl;
-        }
         ret.insert(ret.end(), output);
 
         if (output.size() < 3)
@@ -141,8 +138,6 @@ vector<string> ocr(cv::Mat &grey){
     resize(out_img,out_img,Size(color.cols*scale_img,color.rows*scale_img));
     namedWindow("recognition",WINDOW_NORMAL);
     imshow("recognition", out_img);
-    waitKey(0);
-
     return ret;
 }
 

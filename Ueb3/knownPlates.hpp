@@ -8,6 +8,8 @@
 #pragma once
 
 static const char* knownPlates[] = {
-		"HB:PP 434",
-		"HB:TQ 883"
+		"HB:PP:434",
+		"HB:TQ:883"
 };
+
+static constexpr unsigned int numberOfKnownPlates = 2;	//mega uncool

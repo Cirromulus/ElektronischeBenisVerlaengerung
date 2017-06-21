@@ -25,6 +25,7 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
 	output.push_back(Point(0,input.size().height));
 }
 
+//Also would crop image
 void phatPerspectiveNormalizer(
 		cv::Mat &input, std::vector<cv::Point> &outline, cv::Mat &output){
 	(void) outline;
@@ -42,20 +43,24 @@ int megaPlateRecognisation(cv::Mat &input){
 	std::vector<std::string> texts = ocr(input);
 	int found = -1;
 	for(auto text : texts){
-		cout << text << endl;
 		for(unsigned int i = 0; i < numberOfKnownPlates; i++){
 			char *plate = strdup(knownPlates[i]);
+			if(debug){
+				cout << "Scanning for " << string(plate) << "... ";
+			}
 			char *subelem = strtok(plate, ":");
 			bool valid = true;
 			while(subelem) {
 				if(!strstr(text.c_str(), subelem)){
 					//Not found
+					if(debug) cout << "'" << string (subelem) << "' not found" << endl;
 					valid = false;
 					break;
 				}
 				subelem = strtok(NULL, ":");
 			}
 			if(valid){
+				if(debug) cout << "found." << endl;
 				found = i;
 			}
 		}

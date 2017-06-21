@@ -59,12 +59,12 @@ vector<string> ocr(cv::Mat &grey){
         tmp_group.clear();
     }
 
-    double t_g = (double)getTickCount();
+    //double t_g = (double)getTickCount();
     // Detect character groups
     vector< vector<Vec2i> > nm_region_groups;
     vector<Rect> nm_boxes;
     erGrouping(color, channels, regions, nm_region_groups, nm_boxes,ERGROUPING_ORIENTATION_HORIZ);
-    cout << "TIME_GROUPING = " << ((double)getTickCount() - t_g)*1000/getTickFrequency() << endl;
+    //cout << "TIME_GROUPING = " << ((double)getTickCount() - t_g)*1000/getTickFrequency() << endl;
 
 
     /*Text Recognition (OCR)*/
@@ -105,7 +105,7 @@ vector<string> ocr(cv::Mat &grey){
         ocr->run(group_img, output, &boxes, &words, &confidences, OCR_LEVEL_WORD);
 
         output.erase(remove(output.begin(), output.end(), '\n'), output.end());
-        cout << "OCR output = \"" << output << "\" length = " << output.size() << endl;
+        cout << "OCR Found \"" << output << "\"" << endl;
         ret.insert(ret.end(), output);
 
         if (output.size() < 3)

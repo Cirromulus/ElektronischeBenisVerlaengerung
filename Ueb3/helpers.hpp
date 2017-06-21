@@ -14,6 +14,7 @@
 #include <vector>
 
 
+extern bool debug;
 
 // The images are very large, hence for displaying they are scaled down to
 // the size below.

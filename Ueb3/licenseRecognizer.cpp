@@ -27,15 +27,16 @@ int pipelineDetect(Mat &img){
     return megaPlateRecognisation(plateImg);
 }
 
-void camPath(int camNo){
+bool camPath(int camNo){
     CvCapture* capture = 0;
     capture = cvCaptureFromCAM( camNo );
     if(!capture){
     	cout << "No valid camera " << endl;
-    	return;
+    	return false;
     }
     Mat display, frame;
     int plateId = -1;
+    bool foundAnyPlate = false;
     while(capture){
 		IplImage* iplImg = cvQueryFrame( capture );
 		frame = cvarrToMat(iplImg);
@@ -51,6 +52,7 @@ void camPath(int camNo){
 		plateId = pipelineDetect(display);
 		if(plateId >= 0){
 		   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
+		   foundAnyPlate = true;
 		}else{
 		   if(debug) cout << "No known Plate found." << endl;
 		}
@@ -59,12 +61,20 @@ void camPath(int camNo){
             break;
         }
     }
+    return foundAnyPlate;
 }
 
-void imagePath(string path){
+bool imagePath(string path){
 	Mat display = imread( path, CV_LOAD_IMAGE_COLOR );
-	showScaled(windowname, display);
-	waitKey();
+	if(debug) showScaled(windowname, display);
+	int plateId = pipelineDetect(display);
+	if(plateId >= 0){
+	   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
+	}else{
+	   if(debug) cout << "No known Plate found." << endl;
+	}
+	if(debug) waitKey();
+	return plateId >= 0;
 }
 
 int main( int argc, char** argv )
@@ -82,21 +92,21 @@ int main( int argc, char** argv )
     	cout << "Debug mode active." << endl;
     }
 
+	if(debug) namedWindow( windowname, WINDOW_AUTOSIZE );
 
     if(!strcmp(argv[imageCtr], "cam")){
-		if(debug) namedWindow( windowname, WINDOW_AUTOSIZE );
     	int camNo = -1;
-    	if(argc > imageCtr+1)
-    		camNo = atoi(argv[imageCtr+1]);
+    	imageCtr++;
+    	if(argc > imageCtr)
+    		camNo = atoi(argv[imageCtr]);
     	cout << "Grepping cam " << camNo << endl;
     	 //0=default, -1=any camera, 1..99=your camera
-    	camPath(camNo);
+    	return camPath(camNo) ? 0 : -1;
     }else{
-    	namedWindow( windowname, WINDOW_AUTOSIZE );
-    	if(argc > imageCtr+1){
-    		imagePath(argv[imageCtr+1]);
-    	}else{
+    	if(argc <= imageCtr){
     		cout << "No image given!" << endl;
+    		return -1;
     	}
+		return imagePath(argv[imageCtr]) ? 0 : -1;;
     }
 }

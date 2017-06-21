@@ -9,18 +9,13 @@
 #include "knownPlates.hpp"
 #include "helpers.hpp"
 
-#include "opencv2/text.hpp"
-#include "opencv2/core/utility.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgproc.hpp"
-
 #include <iostream>
 
 using namespace std;
 using namespace cv;
 using namespace cv::text;
 
-vector<string> ocr(cv::Mat &grey){
+vector<string> CustomOCR::ocr(cv::Mat &grey){
     vector<Mat> channels;
     Mat color;
     cvtColor(grey, color, CV_GRAY2RGB);
@@ -31,8 +26,7 @@ vector<string> ocr(cv::Mat &grey){
 
     double t_d = (double)getTickCount();
     // Create ERFilter objects with the 1st and 2nd stage default classifiers
-    Ptr<ERFilter> er_filter1 = createERFilterNM1(loadClassifierNM1("trained_classifierNM1.xml"),8,0.00015f,0.13f,0.2f,true,0.1f);
-    Ptr<ERFilter> er_filter2 = createERFilterNM2(loadClassifierNM2("trained_classifierNM2.xml"),0.5);
+
 
     vector<vector<ERStat> > regions(1);
     // Apply the default cascade classifier to each independent channel (could be done in parallel)
@@ -70,9 +64,6 @@ vector<string> ocr(cv::Mat &grey){
 
     /*Text Recognition (OCR)*/
 
-    double t_r = (double)getTickCount();
-    Ptr<OCRTesseract> ocr = OCRTesseract::create();
-    if(debug) cout << "TIME_OCR_INITIALIZATION = " << ((double)getTickCount() - t_r)*1000/getTickFrequency() << endl;
     string output;
 
     Mat out_img;
@@ -84,6 +75,7 @@ vector<string> ocr(cv::Mat &grey){
     float scale_font = (float)(scale_img)/2.f;
     vector<string> words_detection;
 
+    double t_r;
     if(debug) t_r = (double)getTickCount();
 
     vector<string> ret;
@@ -103,7 +95,7 @@ vector<string> ocr(cv::Mat &grey){
         vector<Rect>   boxes;
         vector<string> words;
         vector<float>  confidences;
-        ocr->run(group_img, output, &boxes, &words, &confidences, OCR_LEVEL_WORD);
+        tesser->run(group_img, output, &boxes, &words, &confidences, OCR_LEVEL_WORD);
 
         output.erase(remove(output.begin(), output.end(), '\n'), output.end());
         if(debug) cout << "OCR Found \"" << output << "\"" << endl;
@@ -145,12 +137,12 @@ vector<string> ocr(cv::Mat &grey){
     return ret;
 }
 
-size_t min(size_t x, size_t y, size_t z)
+size_t CustomOCR::min(size_t x, size_t y, size_t z)
 {
-    return x < y ? min(x,z) : min(y,z);
+    return x < y ? std::min(x,z) : std::min(y,z);
 }
 
-size_t edit_distance(const string& A, const string& B)
+size_t CustomOCR::edit_distance(const string& A, const string& B)
 {
     size_t NA = A.size();
     size_t NB = B.size();
@@ -175,7 +167,7 @@ size_t edit_distance(const string& A, const string& B)
     return M[A.size()][B.size()];
 }
 
-bool isRepetitive(const string& s)
+bool CustomOCR::isRepetitive(const string& s)
 {
     int count = 0;
     for (int i=0; i<(int)s.size(); i++)
@@ -193,7 +185,7 @@ bool isRepetitive(const string& s)
 }
 
 
-void er_draw(vector<Mat> &channels, vector<vector<ERStat> > &regions, vector<Vec2i> group, Mat& segmentation)
+void CustomOCR::er_draw(vector<Mat> &channels, vector<vector<ERStat> > &regions, vector<Vec2i> group, Mat& segmentation)
 {
     for (int r=0; r<(int)group.size(); r++)
     {
@@ -208,6 +200,6 @@ void er_draw(vector<Mat> &channels, vector<vector<ERStat> > &regions, vector<Vec
     }
 }
 
-bool sort_by_length(const string &a, const string &b){
+bool CustomOCR::sort_by_length(const string &a, const string &b){
 	return (a.size()>b.size());
 }

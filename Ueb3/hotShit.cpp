@@ -32,6 +32,8 @@ void phatPerspectiveNormalizer(
     cvtColor(input,output,COLOR_RGB2GRAY);
 }
 
+static CustomOCR customOcr;
+
 /**
  * @return true, if plate is one of the known plates
  */
@@ -40,7 +42,8 @@ int megaPlateRecognisation(cv::Mat &input){
 		cout << "Converting input image to grey." << endl;
 		cvtColor(input, input, COLOR_RGB2GRAY);
 	}
-	std::vector<std::string> texts = ocr(input);
+	std::vector<std::string> texts = customOcr.ocr(input);
+	double t_r = (double)getTickCount();
 	int found = -1;
 	for(auto text : texts){
 		for(unsigned int i = 0; i < numberOfKnownPlates; i++){
@@ -68,5 +71,6 @@ int megaPlateRecognisation(cv::Mat &input){
 			break;
 		}
 	}
+	if(debug) cout << "TIME_PLATE_SCANNING = " << ((double)getTickCount() - t_r)*1000/getTickFrequency() << endl;
 	return found;
 }

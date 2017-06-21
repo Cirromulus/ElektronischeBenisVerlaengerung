@@ -7,6 +7,7 @@
 
 #include "ocrBackend.hpp"
 #include "knownPlates.hpp"
+#include "helpers.hpp"
 
 #include "opencv2/text.hpp"
 #include "opencv2/core/utility.hpp"
@@ -28,7 +29,7 @@ vector<string> ocr(cv::Mat &grey){
     //This is our only channel, and we dont have to read inverted text
     channels.push_back(grey);
 
-    //double t_d = (double)getTickCount();
+    double t_d = (double)getTickCount();
     // Create ERFilter objects with the 1st and 2nd stage default classifiers
     Ptr<ERFilter> er_filter1 = createERFilterNM1(loadClassifierNM1("trained_classifierNM1.xml"),8,0.00015f,0.13f,0.2f,true,0.1f);
     Ptr<ERFilter> er_filter2 = createERFilterNM2(loadClassifierNM2("trained_classifierNM2.xml"),0.5);
@@ -41,7 +42,7 @@ vector<string> ocr(cv::Mat &grey){
         er_filter2->run(channels[c], regions[c]);
     }
 
-    //cout << "TIME_REGION_DETECTION = " << ((double)getTickCount() - t_d)*1000/getTickFrequency() << endl;
+    if(debug) cout << "TIME_REGION_DETECTION = " << ((double)getTickCount() - t_d)*1000/getTickFrequency() << endl;
 
     Mat out_img_decomposition= Mat::zeros(color.rows+2, color.cols+2, CV_8UC1);
     vector<Vec2i> tmp_group;
@@ -59,19 +60,19 @@ vector<string> ocr(cv::Mat &grey){
         tmp_group.clear();
     }
 
-    //double t_g = (double)getTickCount();
+    double t_g = (double)getTickCount();
     // Detect character groups
     vector< vector<Vec2i> > nm_region_groups;
     vector<Rect> nm_boxes;
     erGrouping(color, channels, regions, nm_region_groups, nm_boxes,ERGROUPING_ORIENTATION_HORIZ);
-    //cout << "TIME_GROUPING = " << ((double)getTickCount() - t_g)*1000/getTickFrequency() << endl;
+    if(debug) cout << "TIME_GROUPING = " << ((double)getTickCount() - t_g)*1000/getTickFrequency() << endl;
 
 
     /*Text Recognition (OCR)*/
 
-    //double t_r = (double)getTickCount();
+    double t_r = (double)getTickCount();
     Ptr<OCRTesseract> ocr = OCRTesseract::create();
-    //cout << "TIME_OCR_INITIALIZATION = " << ((double)getTickCount() - t_r)*1000/getTickFrequency() << endl;
+    if(debug) cout << "TIME_OCR_INITIALIZATION = " << ((double)getTickCount() - t_r)*1000/getTickFrequency() << endl;
     string output;
 
     Mat out_img;
@@ -79,11 +80,11 @@ vector<string> ocr(cv::Mat &grey){
     Mat out_img_segmentation = Mat::zeros(color.rows+2, color.cols+2, CV_8UC1);
     color.copyTo(out_img);
     color.copyTo(out_img_detection);
-    float scale_img  = 600.f/color.rows;
-    float scale_font = (float)(2-scale_img)/1.4f;
+    float scale_img  = 800.f/color.rows;
+    float scale_font = (float)(scale_img)/2.f;
     vector<string> words_detection;
 
-    //t_r = (double)getTickCount();
+    if(debug) t_r = (double)getTickCount();
 
     vector<string> ret;
     for (int i=0; i<(int)nm_boxes.size(); i++)
@@ -105,39 +106,42 @@ vector<string> ocr(cv::Mat &grey){
         ocr->run(group_img, output, &boxes, &words, &confidences, OCR_LEVEL_WORD);
 
         output.erase(remove(output.begin(), output.end(), '\n'), output.end());
-        cout << "OCR Found \"" << output << "\"" << endl;
+        if(debug) cout << "OCR Found \"" << output << "\"" << endl;
         ret.insert(ret.end(), output);
 
         if (output.size() < 3)
             continue;
 
-        //Some beatuiful debug images
-        for (int j=0; j<(int)boxes.size(); j++)
-        {
-            boxes[j].x += nm_boxes[i].x-15;
-            boxes[j].y += nm_boxes[i].y-15;
+        if(debug){
+			//Some beatuiful debug images
+			for (int j=0; j<(int)boxes.size(); j++)
+			{
+				boxes[j].x += nm_boxes[i].x-15;
+				boxes[j].y += nm_boxes[i].y-15;
 
-            //cout << "  word = " << words[j] << "\t confidence = " << confidences[j] << endl;
-            if ((words[j].size() < 2) || (confidences[j] < 51) ||
-                    ((words[j].size()==2) && (words[j][0] == words[j][1])) ||
-                    ((words[j].size()< 4) && (confidences[j] < 60)) ||
-                    isRepetitive(words[j]))
-                continue;
-            words_detection.push_back(words[j]);
-            rectangle(out_img, boxes[j].tl(), boxes[j].br(), Scalar(255,0,255),3);
-            Size word_size = getTextSize(words[j], FONT_HERSHEY_SIMPLEX, (double)scale_font, (int)(3*scale_font), NULL);
-            rectangle(out_img, boxes[j].tl()-Point(3,word_size.height+3), boxes[j].tl()+Point(word_size.width,0), Scalar(255,0,255),-1);
-            putText(out_img, words[j], boxes[j].tl()-Point(1,1), FONT_HERSHEY_SIMPLEX, scale_font, Scalar(255,255,255),(int)(3*scale_font));
-            out_img_segmentation = out_img_segmentation | group_segmentation;
+				//cout << "  word = " << words[j] << "\t confidence = " << confidences[j] << endl;
+				if ((words[j].size() < 2) || (confidences[j] < 51) ||
+						((words[j].size()==2) && (words[j][0] == words[j][1])) ||
+						((words[j].size()< 4) && (confidences[j] < 60)) ||
+						isRepetitive(words[j]))
+					continue;
+				words_detection.push_back(words[j]);
+				rectangle(out_img, boxes[j].tl(), boxes[j].br(), Scalar(255,0,255),3);
+				Size word_size = getTextSize(words[j], FONT_HERSHEY_SIMPLEX, (double)scale_font, (int)(3*scale_font), NULL);
+				rectangle(out_img, boxes[j].tl()-Point(3,word_size.height+3), boxes[j].tl()+Point(word_size.width,0), Scalar(255,0,255),-1);
+				putText(out_img, words[j], boxes[j].tl()-Point(1,1), FONT_HERSHEY_SIMPLEX, scale_font, Scalar(255,255,255),(int)(3*scale_font));
+				out_img_segmentation = out_img_segmentation | group_segmentation;
+			}
         }
-
     }
 
-    //cout << "TIME_OCR = " << ((double)getTickCount() - t_r)*1000/getTickFrequency() << endl;
+    if(debug) cout << "TIME_OCR = " << ((double)getTickCount() - t_r)*1000/getTickFrequency() << endl;
 
-    resize(out_img,out_img,Size(color.cols*scale_img,color.rows*scale_img));
-    namedWindow("recognition",WINDOW_NORMAL);
-    imshow("recognition", out_img);
+    if(debug){
+		resize(out_img,out_img,Size(color.cols*scale_img,color.rows*scale_img));
+		namedWindow("recognition",WINDOW_AUTOSIZE);
+		imshow("recognition", out_img);
+    }
     return ret;
 }
 

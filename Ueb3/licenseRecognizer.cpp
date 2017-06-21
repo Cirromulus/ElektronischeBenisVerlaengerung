@@ -46,13 +46,13 @@ void camPath(int camNo){
 		else
 		   flip( frame, display, 0 );
 
-		cvShowImage( "windowname", iplImg);
+		if(debug) cvShowImage( windowname.c_str(), iplImg);
 
 		plateId = pipelineDetect(display);
 		if(plateId >= 0){
 		   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
 		}else{
-		   cout << "No known Plate found." << endl;
+		   if(debug) cout << "No known Plate found." << endl;
 		}
         if( waitKey( 10 ) >= 0 ){
             cvReleaseCapture( &capture );
@@ -82,9 +82,9 @@ int main( int argc, char** argv )
     	cout << "Debug mode active." << endl;
     }
 
-    namedWindow( windowname, WINDOW_AUTOSIZE );
 
     if(!strcmp(argv[imageCtr], "cam")){
+		if(debug) namedWindow( windowname, WINDOW_AUTOSIZE );
     	int camNo = -1;
     	if(argc > imageCtr+1)
     		camNo = atoi(argv[imageCtr+1]);
@@ -92,6 +92,7 @@ int main( int argc, char** argv )
     	 //0=default, -1=any camera, 1..99=your camera
     	camPath(camNo);
     }else{
+    	namedWindow( windowname, WINDOW_AUTOSIZE );
     	if(argc > imageCtr+1){
     		imagePath(argv[imageCtr+1]);
     	}else{

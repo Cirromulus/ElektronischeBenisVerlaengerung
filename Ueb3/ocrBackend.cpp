@@ -71,7 +71,7 @@ vector<string> CustomOCR::ocr(cv::Mat &grey){
     Mat out_img_segmentation = Mat::zeros(color.rows+2, color.cols+2, CV_8UC1);
     color.copyTo(out_img);
     color.copyTo(out_img_detection);
-    float scale_img  = 800.f/color.rows;
+    float scale_img  = 750.f/color.rows;
     float scale_font = (float)(scale_img)/2.f;
     vector<string> words_detection;
 

@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <climits>
 
 using namespace std;
 using namespace  cv;
@@ -50,9 +51,26 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
 
 //Also would crop image
 cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point> &outline){
-	(void) outline;
-	(void) input;
-	return Mat(input);
+    int x_min, x_max, y_min, y_max;
+    x_max = y_max = INT_MIN;
+    x_min = y_min = INT_MAX;
+    for(cv::Point pt : outline) {
+        if(pt.x < x_min) x_min = pt.x;
+        if(pt.x > x_max) x_max = pt.x;
+        if(pt.y < y_min) y_min = pt.y;
+        if(pt.y > y_max) y_max = pt.y;
+    }
+    cv::Rect cropRect(x_min, y_min, x_max, y_max);
+    cv::Mat croppedImg = input(cropRect);
+    
+    std::vector<cv::Point> destPoints = {cv::Point(x_min, y_min), cv::Point(x_max, y_min), cv::Point(x_max, y_max), cv::Point(x_min, y_max)};
+    
+    Mat trans = cv::getPerspectiveTransform(outline, destPoints);
+    Mat res(croppedImg);
+    
+    cv::warpPerspective(croppedImg, res, trans, cv::Size(res.size[0], res.size[1]));
+    
+    return res;
 }
 
 static CustomOCR customOcr;

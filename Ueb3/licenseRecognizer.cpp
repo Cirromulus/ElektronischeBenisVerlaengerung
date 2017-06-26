@@ -18,13 +18,12 @@ bool debug = false;
 /***************************************************************************/
 
 int pipelineDetect(Mat &img){
-    Mat plateImg;
     vector<Point> plateOutline;
 
     tightPreprocessing(img);
     hardSegmentation(img, plateOutline);
-    phatPerspectiveNormalizer(img, plateOutline, plateImg);
-    return megaPlateRecognisation(plateImg);
+    Mat plateImg = phatPerspectiveNormalizer(img, plateOutline);
+    return megaPlateRecognisificationessing(plateImg);
 }
 
 bool camPath(int camNo){
@@ -81,7 +80,7 @@ int main( int argc, char** argv )
 {
     if (argc==1) {
        cerr << "Usage" << endl;
-       cerr << "dices [debug] {[image], cam [id]}" << endl;
+       cerr << argv[0] << " [debug] {[image], cam [id]}" << endl;
        return 1;
     }
     int imageCtr = 1;
@@ -99,7 +98,7 @@ int main( int argc, char** argv )
     	imageCtr++;
     	if(argc > imageCtr)
     		camNo = atoi(argv[imageCtr]);
-    	cout << "Grepping cam " << camNo << endl;
+    	if(debug) cout << "Grepping cam " << camNo << endl;
     	 //0=default, -1=any camera, 1..99=your camera
     	return camPath(camNo) ? 0 : -1;
     }else{

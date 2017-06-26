@@ -15,7 +15,7 @@ using namespace std;
 using namespace  cv;
 
 void tightPreprocessing(cv::Mat &img){
-	(void) img;
+    cvtColor(img, img, COLOR_RGB2GRAY);
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
@@ -26,10 +26,10 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
 }
 
 //Also would crop image
-void phatPerspectiveNormalizer(
-		cv::Mat &input, std::vector<cv::Point> &outline, cv::Mat &output){
+cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point> &outline){
 	(void) outline;
-    cvtColor(input,output,COLOR_RGB2GRAY);
+	(void) input;
+	return Mat(input);
 }
 
 static CustomOCR customOcr;
@@ -37,7 +37,7 @@ static CustomOCR customOcr;
 /**
  * @return true, if plate is one of the known plates
  */
-int megaPlateRecognisation(cv::Mat &input){
+int megaPlateRecognisificationessing(cv::Mat &input){
 	if(type2str(input.type()) != string("8UC1")){
 		cout << "Converting input image to grey." << endl;
 		cvtColor(input, input, COLOR_RGB2GRAY);

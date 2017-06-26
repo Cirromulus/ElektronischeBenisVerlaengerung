@@ -13,10 +13,9 @@ void tightPreprocessing(cv::Mat &img);
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output);
 
-void phatPerspectiveNormalizer(
-		cv::Mat &input, std::vector<cv::Point> &outline, cv::Mat &output);
+cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point> &outline);
 
 /**
  * @return true, if plate is one of the known plates
  */
-int megaPlateRecognisation(cv::Mat &input);
+int megaPlateRecognisificationessing(cv::Mat &input);

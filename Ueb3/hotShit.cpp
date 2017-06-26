@@ -9,7 +9,14 @@
 #include "helpers.hpp"
 #include "ocrBackend.hpp"
 #include "knownPlates.hpp"
+
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+#include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 using namespace  cv;
@@ -23,6 +30,22 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
 	output.push_back(Point(input.size().width,0));
 	output.push_back(Point(input.size()));
 	output.push_back(Point(0,input.size().height));
+
+	Mat canny_output;
+   vector<vector<Point> > contours;
+   vector<Vec4i> hierarchy;
+   Mat dummy;
+   /// Detect edges using canny
+
+   double perfectThresholdBelieveMe = threshold(input, dummy, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+   Canny(input, canny_output, perfectThresholdBelieveMe/2, perfectThresholdBelieveMe);
+
+   showScaled("canny output", canny_output);
+
+   /// Find contours
+   //findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );
+
 }
 
 //Also would crop image

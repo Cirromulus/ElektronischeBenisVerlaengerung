@@ -24,7 +24,7 @@ using namespace  cv;
 
 void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
-    threshold(img,127,255,cv2.THRESH_TOZERO);
+    //threshold(img,127,255,cv2.THRESH_TOZERO); //This is python code and thus cant be used in a  c++ compiler
     normalize(img, img, 1, 0,NORM_MINMAX);
 }
 

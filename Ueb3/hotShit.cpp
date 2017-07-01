@@ -32,10 +32,19 @@ void tightPreprocessing(cv::Mat &img){
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
+
 	output.push_back(Point(0,0));
 	output.push_back(Point(input.size().width,0));
 	output.push_back(Point(input.size()));
 	output.push_back(Point(0,input.size().height));
+
+/*
+	//Img 1969
+	output.push_back(Point(190,210));
+	output.push_back(Point(680,196));
+	output.push_back(Point(676,285));
+	output.push_back(Point(197,315));
+*/
 
 	Mat canny_output;
    vector<vector<Point> > contours;

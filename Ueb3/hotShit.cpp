@@ -24,9 +24,11 @@ using namespace  cv;
 
 void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
+    threshold(img,127,255,cv2.THRESH_TOZERO);
+    normalize(img, img, 1, 0,NORM_MINMAX);
 }
 
-void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
+void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 	output.push_back(Point(0,0));
 	output.push_back(Point(input.size().width,0));
 	output.push_back(Point(input.size()));
@@ -50,25 +52,44 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
 }
 
 //Also would crop image
-cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point> &outline){
-    int x_min, x_max, y_min, y_max;
-    x_max = y_max = INT_MIN;
-    x_min = y_min = INT_MAX;
+cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline){
+    string croppedStr = "cropped";
+    string transformedStr = "transormed";
+    if(debug) {
+        namedWindow( croppedStr, WINDOW_AUTOSIZE );
+        namedWindow( transformedStr, WINDOW_AUTOSIZE );
+    }
+    float x_min, x_max, y_min, y_max;
+    x_max = y_max = std::numeric_limits<float>::min();;
+    x_min = y_min = std::numeric_limits<float>::max();;
     for(cv::Point pt : outline) {
         if(pt.x < x_min) x_min = pt.x;
         if(pt.x > x_max) x_max = pt.x;
         if(pt.y < y_min) y_min = pt.y;
         if(pt.y > y_max) y_max = pt.y;
     }
-    cv::Rect cropRect(x_min, y_min, x_max, y_max);
+    
+    float width = x_max-x_min, height = y_max-y_min;
+    cv::Rect cropRect(x_min, y_min, width, height);
     cv::Mat croppedImg = input(cropRect);
+    if(debug) showScaled(croppedStr, croppedImg);
+   
+    std::vector<cv::Point2f> destPoints = {cv::Point2f(0, 0), cv::Point2f(width, 0), cv::Point2f(width, height), cv::Point2f(0, height)};
     
-    std::vector<cv::Point> destPoints = {cv::Point(x_min, y_min), cv::Point(x_max, y_min), cv::Point(x_max, y_max), cv::Point(x_min, y_max)};
+    std::vector<cv::Point2f> srcPoints;
+    for(unsigned int i = 0; i < outline.size(); i++)
+    {
+        srcPoints.push_back(outline[i] - Point2f(x_min, y_min));
+    }
     
-    Mat trans = cv::getPerspectiveTransform(outline, destPoints);
-    Mat res(croppedImg);
+    Mat trans = cv::getPerspectiveTransform(srcPoints, destPoints);
+    Mat res = input(cropRect);
     
-    cv::warpPerspective(croppedImg, res, trans, cv::Size(res.size[0], res.size[1]));
+    cv::warpPerspective(croppedImg, res, trans, res.size());
+    
+    if(debug) showScaled(transformedStr, res);
+    
+    
     
     return res;
 }

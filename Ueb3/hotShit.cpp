@@ -42,7 +42,7 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point> &output){
 
    Canny(input, canny_output, perfectThresholdBelieveMe/2, perfectThresholdBelieveMe);
 
-   showScaled("canny output", canny_output);
+   if(debug) showScaled("canny output", canny_output);
 
    /// Find contours
    //findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );

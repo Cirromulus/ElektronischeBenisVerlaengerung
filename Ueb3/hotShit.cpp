@@ -26,11 +26,12 @@ void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
 
     // Set threshold and maxValue
-    double thresh = 220;
+    double thresh = 190;
     double maxValue = 255;
 
     // Binary Threshold
-    threshold(img,img, thresh, maxValue, THRESH_BINARY);
+    threshold(img,img, thresh, maxValue, THRESH_TOZERO);
+    equalizeHist( img, img );
 
     imshow( "Display window", img);
     waitKey(0);

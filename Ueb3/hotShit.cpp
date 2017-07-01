@@ -32,10 +32,9 @@ void tightPreprocessing(cv::Mat &img){
     // Binary Threshold
     threshold(img,img, thresh, maxValue, THRESH_BINARY);
 
-    //normalize(img, img, 1, 0,NORM_MINMAX);
-
     imshow( "Display window", img);
     waitKey(0);
+
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
@@ -54,7 +53,7 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
    Canny(input, canny_output, perfectThresholdBelieveMe/2, perfectThresholdBelieveMe);
 
-   showScaled("canny output", canny_output);
+   if(debug) showScaled("canny output", canny_output);
 
    /// Find contours
    //findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );

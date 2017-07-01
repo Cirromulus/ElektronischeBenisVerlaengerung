@@ -12,6 +12,8 @@
 
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/core/utility.hpp"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,44 +28,132 @@ void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
 
     // Set threshold and maxValue
-    double thresh = 190;
+    double thresh = 80;
     double maxValue = 255;
 
     // Binary Threshold
     threshold(img,img, thresh, maxValue, THRESH_TOZERO);
     equalizeHist( img, img );
 
-    imshow( "Display window", img);
+    imshow( "Preprocessed image", img);
     waitKey(0);
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
-	output.push_back(Point(0,0));
-	output.push_back(Point(input.size().width,0));
-	output.push_back(Point(input.size()));
-	output.push_back(Point(0,input.size().height));
 
-	Mat canny_output;
-   vector<vector<Point> > contours;
-   vector<Vec4i> hierarchy;
-   Mat dummy;
-   /// Detect edges using canny
+	int edgeThresh_lower = 100;
 
-   double perfectThresholdBelieveMe = threshold(input, dummy, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+	RNG rng(12345);
 
-   Canny(input, canny_output, perfectThresholdBelieveMe/2, perfectThresholdBelieveMe);
+	Mat edge, cedge, im_flood, im_contours;
 
-   if(debug) showScaled("canny output", canny_output);
+	vector<vector<Point>> foundContours;
+	vector<vector<Point>> filteredContours;
 
-   /// Find contours
-   //findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );
+	vector<Vec4i> hierarchy;
+
+	blur(input, edge, Size(3,3));
+	cvtColor(input, input, COLOR_GRAY2RGB);
+
+	// Run the edge detector on blurred input
+	Canny(edge, edge, edgeThresh_lower, edgeThresh_lower*5, 3);
+
+	if(debug){
+		cedge = Scalar::all(0);
+		input.copyTo(cedge, edge);
+		imshow("Edge map", cedge);
+	}
+
+	//find contours in canny output
+	findContours(edge, foundContours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1);
+	if(foundContours.size()>0){
+		input.copyTo(im_contours, input);
+
+		filteredContours.resize(foundContours.size());
+
+		//storage for largest contour
+		int area = 0;
+		int max_area=0;
+		int threshold_approximation=3;
+		vector<vector<Point>> largest_contour;
+		largest_contour.resize(1);
+
+		//get largest contour by successive comparison of area sizes
+		for( size_t k = 0; k < foundContours.size(); k++ ){
+			approxPolyDP(Mat(foundContours[k]), filteredContours[k],threshold_approximation, true);
+			area = contourArea(filteredContours[k]);
+			if(area>=max_area){
+				max_area =  area;
+				if (debug) cout << "max area: " << max_area << endl;
+				largest_contour[0]=filteredContours[k];
+			}
+		}
+
+		if(debug){  //show points of found contour after first approximation
+			cout << "largest contour: " << largest_contour[0] << endl;
+			for(Point pt : largest_contour[0]){
+				drawCross(im_contours,pt,4,Scalar(0,255,0));
+			}
+		}
+
+		//simplifying contour until polygon has only 4 corners
+		while(largest_contour[0].size()>4){
+			approxPolyDP(Mat(largest_contour[0]), largest_contour[0],threshold_approximation, true);
+			threshold_approximation++;
+		}
+
+		if(debug){	//show points of found contour after simplificatition to only 4 points
+			cout << "largest contour after approximation: " << largest_contour[0] << endl;
+
+			for( uint i = 0; i<filteredContours.size(); i++ ){
+				Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+				drawContours(im_contours, filteredContours, i, color, 2, 8, hierarchy, 0, Point() );
+			}
+			for(uint i=0; i<filteredContours.size(); i++){
+						cout << "i=" << i << " ";
+						for(uint j=0; j<filteredContours[i].size(); j++){
+							cout << ":" << filteredContours[i][j];
+						}
+					cout << endl;
+			}
+
+			drawContours(im_contours,largest_contour,-1, Scalar(255,0,0),2,8,hierarchy, 0, Point() );
+			for(Point pt : largest_contour[0]){
+				drawCross(im_contours,pt,4,Scalar(0,0,255));
+			}
+
+		    namedWindow("Edge map", 1);
+		    namedWindow("source",1);
+		    namedWindow("contours",1);
+
+		    imshow("source", input);
+			imshow("contours",im_contours);
+
+		}
+
+		//Set output values
+		for(Point pt : largest_contour[0]){
+			output.push_back(pt);
+		}
+	}
+//
+//
+//	    // create a toolbar
+//	    createTrackbar("Binary lower threshold", "Edge map", &binThresh, 255, onTrackbar);
+//	    createTrackbar("Canny lower threshold", "Edge map", &edgeThresh_lower, 255, onTrackbar);
+//	    createTrackbar("Canny uppper threshold", "Edge map", &edgeThresh_upper, 255, onTrackbar);
+//
+//	    createTrackbar("floodfill lower threshold", "floodfill", &floodThresh_lower, 255, onTrackbarTwo);
+//	    createTrackbar("floodfill upper threshold", "floodfill", &floodThresh_upper, 255, onTrackbarTwo);
+
 
 }
+
 
 //Also would crop image
 cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline){
     string croppedStr = "cropped";
-    string transformedStr = "transormed";
+    string transformedStr = "transformed";
     if(debug) {
         namedWindow( croppedStr, WINDOW_AUTOSIZE );
         namedWindow( transformedStr, WINDOW_AUTOSIZE );

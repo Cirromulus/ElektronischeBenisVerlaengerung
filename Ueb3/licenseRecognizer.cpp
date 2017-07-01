@@ -13,7 +13,7 @@ using namespace cv;
 
 string windowname = "License Recognization PLATOS";
 
-bool debug = false;
+bool debug = true;
 
 /***************************************************************************/
 

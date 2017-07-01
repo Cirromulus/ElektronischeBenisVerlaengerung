@@ -24,6 +24,8 @@ using namespace  cv;
 
 void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
+    threshold(img,127,255,cv2.THRESH_TOZERO);
+    normalize(img, img, 1, 0,NORM_MINMAX);
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){

@@ -18,7 +18,7 @@ bool debug = false;
 /***************************************************************************/
 
 int pipelineDetect(Mat &img){
-    vector<Point> plateOutline;
+    vector<Point2f> plateOutline;
 
     tightPreprocessing(img);
     hardSegmentation(img, plateOutline);

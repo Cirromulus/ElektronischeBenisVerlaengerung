@@ -24,8 +24,11 @@ using namespace  cv;
 
 void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
-    //threshold(img,127,255,cv2.THRESH_TOZERO); //This is python code and thus cant be used in a  c++ compiler
-    normalize(img, img, 1, 0,NORM_MINMAX);
+    //This is python code and thus cant be used in a c++ compiler
+    //threshold(img,127,255,cv2.THRESH_TOZERO);
+
+    //This normalizes Values to 1..0, but our greyscale image is from 0..2^8 (or higher)
+    //normalize(img, img, 1, 0,NORM_MINMAX);
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){

@@ -34,7 +34,6 @@ void tightPreprocessing(cv::Mat &img){
 
     imshow( "Display window", img);
     waitKey(0);
-
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){

@@ -113,7 +113,7 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		}
 	};
 
-	int edgeThresh_lower = 100;
+	int edgeThresh_lower =100;
 
 	RNG rng(12345);
 	Mat edge, cedge, im_flood, im_contours;
@@ -157,6 +157,7 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		for( size_t k = 0; k < foundContours.size(); k++ ){
 			approxPolyDP(Mat(foundContours[k]), filteredContours[k],threshold_approximation, true);
 			area = contourArea(filteredContours[k]);
+
 			if(area>=max_area){
 				max_area =  area;
 				if (debug) cout << "max area: " << max_area << endl;
@@ -199,12 +200,21 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
 
 		//Additional output for debug mode
-		if(debug){	//show points of found contour after simplification to only 4 points
+		if(debug){
+
+		    namedWindow("Edge map", 1);
+		    namedWindow("source",1);
+		    namedWindow("contours",1);
+
+			//show points of found contour after simplification to only 4 points
 			cout << "largest contour after approximation: " << largest_contour[0] << endl;
 
 			for( uint i = 0; i<filteredContours.size(); i++ ){
 				Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
 				drawContours(im_contours, filteredContours, i, color, 2, 8, hierarchy, 0, Point() );
+//				cout << "area of contour Nr." << i << ": " << contourArea(filteredContours[i]) << endl;
+//				imshow("contours",im_contours);
+//				waitKey(0);
 			}
 			for(uint i=0; i<filteredContours.size(); i++){
 						cout << "i=" << i << " ";
@@ -221,9 +231,6 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
 			cout << "Corner points of plate region: " << output << endl;
 
-		    namedWindow("Edge map", 1);
-		    namedWindow("source",1);
-		    namedWindow("contours",1);
 
 		    imshow("source", input);
 			imshow("contours",im_contours);

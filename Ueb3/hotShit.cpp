@@ -69,7 +69,7 @@ void tightPreprocessing(cv::Mat &img){
 
    if (debug){
 	   imshow( "Preprocessed image", new_image);
-	   waitKey(0);}
+   }
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
@@ -101,17 +101,6 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		output[3] += Point2f(-weg,  weg);
 	}
 	*/
-
-	//Struct for storing Point and accumulated distance to origin
-	struct accDistanceAndPoint{
-		Point pt;
-		int accDist;
-
-		//overwriting operator to make sorting of accDistanceAndPoint possible by comparing accDist
-		inline bool operator<(const accDistanceAndPoint& a) const{
-			return  accDist < a.accDist;
-		}
-	};
 
 	int edgeThresh_lower = 100;
 
@@ -236,6 +225,10 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
 //Also would crop image
 cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline){
+	if(outline.size() != 4){
+		if(debug) cout << "Outline has " << outline.size() << " edges. Skipping Perspective Warp." << endl;
+		return input;
+	}
     string croppedStr = "cropped";
     string transformedStr = "transformed";
     if(debug) {
@@ -268,9 +261,9 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     }
     
     if(debug){
-       	cout << "scrPoints: " << srcPoints << endl;
-       	cout << "destPoints: " << destPoints << endl;
-       }
+		cout << "scrPoints: " << srcPoints << endl;
+		cout << "destPoints: " << destPoints << endl;
+	}
 
     Mat trans = cv::getPerspectiveTransform(srcPoints, destPoints);
     Mat res = input(cropRect);
@@ -290,7 +283,7 @@ int megaPlateRecognisificationessing(cv::Mat &input){
 	//static LexiconOCR customOcr;
 
 	if(type2str(input.type()) != string("8UC1")){
-		cout << "Converting input image to gray." << endl;
+		if(debug) cout << "Converting input image to gray, because someone forgot that" << endl;
 		cvtColor(input, input, COLOR_RGB2GRAY);
 	}
 	if(debug) cout << "Type: " << type2str(input.type()) << endl;

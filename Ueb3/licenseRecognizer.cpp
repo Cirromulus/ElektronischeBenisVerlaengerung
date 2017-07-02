@@ -13,17 +13,29 @@ using namespace cv;
 
 string windowname = "License Recognization PLATOS";
 
-bool debug = true;
+bool debug = false;
 
 /***************************************************************************/
 
 int pipelineDetect(Mat &img){
     vector<Point2f> plateOutline;
-
+    double a,b,c,d,e;
+    a = getTickCount();
     tightPreprocessing(img);
+    b = getTickCount();
     hardSegmentation(img, plateOutline);
+    c = getTickCount();
     Mat plateImg = phatPerspectiveNormalizer(img, plateOutline);
-    return megaPlateRecognisificationessing(plateImg);
+    d = getTickCount();
+    int res =  megaPlateRecognisificationessing(plateImg);
+    e = getTickCount();
+    cout << "\r"
+    		"Prepros: " << (int)((b-a)*1000/getTickFrequency()) << "ms, "
+    		"segment: " << (int)((c-b)*1000/getTickFrequency()) << "ms, "
+			"perspec: " << (int)((d-c)*1000/getTickFrequency()) << "ms, "
+			"recogni: " << (int)((e-d)*1000/getTickFrequency()) << "ms";
+    fflush(stdout);
+    return res;
 }
 
 bool camPath(int camNo){

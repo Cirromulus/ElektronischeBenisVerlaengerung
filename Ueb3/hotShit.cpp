@@ -24,22 +24,79 @@
 using namespace std;
 using namespace  cv;
 
+
+
+
 void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
+    imshow("greyscale", img);
 
-    // Set threshold and maxValue
-    double thresh = 80;
-    double maxValue = 255;
+    Mat new_image =  img.clone();
 
-    // Binary Threshold
-    threshold(img,img, thresh, maxValue, THRESH_TOZERO);
-    equalizeHist( img, img );
+	// Set threshold and maxValue
+   // double thresh = 80;
 
-    imshow( "Preprocessed image", img);
-    waitKey(0);
+
+    uchar in_min=180;
+    uchar in_max=255;
+    uchar gamma=1;
+    uchar out_min=0;
+    uchar out_max=255;
+
+    double cutoff = 120;
+    double pixel = 0;
+
+//    // Binary Threshold
+//    threshold(img,img, thresh, maxValue, THRESH_TOZERO);
+
+    //Note: color correction algorithm inspired by [https://pippin.gimp.org/image-processing/chap_point.html]
+    for( int y = 0; y < img.rows; y++ )
+       { for( int x = 0; x < img.cols; x++ )
+            {
+    	   	   	pixel = (img.at<uchar>(y,x) > cutoff) ? img.at<uchar>(y,x) : 0;
+    	   	   	  // normalize
+				pixel = (pixel-in_min) / (in_max-in_min);
+				  // transform gamma
+				pixel= pow(pixel,gamma);
+				  //rescale range
+				pixel = pixel * (out_max-out_min) + out_min;
+
+    	   	    new_image.at<uchar>(y,x) = saturate_cast <uchar> (pixel);
+              }
+       }
+    //equalizeHist( new_image, new_image );
+
+   if (debug){
+	   imshow( "Preprocessed image", new_image);
+	   waitKey(0);}
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
+
+	//Struct for storing Point and accumulated distance to origin
+	struct accDistanceAndPoint{
+		Point pt;
+		int accDist;
+
+		//overwriting operator to make sorting of accDistanceAndPoint possible by comparing accDist
+		inline bool operator<(const accDistanceAndPoint& a) const{
+			return  accDist < a.accDist;
+		}
+	//	inline bool operator!=(accDistanceAndPoint left, accDistanceAndPoint right){
+	//		return left.accDist != right.accDist;
+	//	}
+
+
+	//		//returns true if distance 1 is smaller than distance 2
+	//		bool compareDistances(accDistanceAndPoint obj1, accDistanceAndPoint obj2){
+	//			int dist1 = obj1.accDist;
+	//			int dist2 = obj2.accDist;
+	//			return (dist1<dist2);
+	//
+	//		}
+
+	};
+
 
 	int edgeThresh_lower = 100;
 
@@ -78,6 +135,9 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		vector<vector<Point>> largest_contour;
 		largest_contour.resize(1);
 
+		//srtorage for Points of final contour with corresponding distance to origin
+		vector<accDistanceAndPoint> sortedPoints;
+
 		//get largest contour by successive comparison of area sizes
 		for( size_t k = 0; k < foundContours.size(); k++ ){
 			approxPolyDP(Mat(foundContours[k]), filteredContours[k],threshold_approximation, true);
@@ -102,6 +162,27 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 			threshold_approximation++;
 		}
 
+		//storing points of final contour and the accumulated distance to 0 (x+y) in sortedPoints
+		for(Point pt : largest_contour[0]){
+			accDistanceAndPoint elem;
+			elem.accDist=pt.x+pt.y;
+			elem.pt=pt;
+			sortedPoints.push_back(elem);
+		}
+
+		//sort points by accumlated distance -> order will be: top_left, bottom_left, top_right, bottom_right
+		sort(sortedPoints.begin(), sortedPoints.end());
+
+		//switch positions of top_right and bottom_right for coherent representation of contour
+		accDistanceAndPoint bottom_right_corner=sortedPoints[3];
+		sortedPoints[3]=sortedPoints[2];
+		sortedPoints[2]=bottom_right_corner;
+
+
+		for(accDistanceAndPoint elem : sortedPoints){
+			output.push_back(cv::Point2f(elem.pt));
+		}
+
 		if(debug){	//show points of found contour after simplificatition to only 4 points
 			cout << "largest contour after approximation: " << largest_contour[0] << endl;
 
@@ -122,6 +203,8 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 				drawCross(im_contours,pt,4,Scalar(0,0,255));
 			}
 
+			cout << "Corner points of plate region: " << output << endl;
+
 		    namedWindow("Edge map", 1);
 		    namedWindow("source",1);
 		    namedWindow("contours",1);
@@ -131,10 +214,6 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
 		}
 
-		//Set output values
-		for(Point pt : largest_contour[0]){
-			output.push_back(pt);
-		}
 	}
 //
 //
@@ -176,11 +255,17 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     std::vector<cv::Point2f> destPoints = {cv::Point2f(0, 0), cv::Point2f(width, 0), cv::Point2f(width, height), cv::Point2f(0, height)};
     
     std::vector<cv::Point2f> srcPoints;
+
     for(unsigned int i = 0; i < outline.size(); i++)
     {
         srcPoints.push_back(outline[i] - Point2f(x_min, y_min));
     }
     
+    if(debug){
+       	cout << "scrPoints: " << srcPoints << endl;
+       	cout << "destPoints: " << destPoints << endl;
+       }
+
     Mat trans = cv::getPerspectiveTransform(srcPoints, destPoints);
     Mat res = input(cropRect);
     

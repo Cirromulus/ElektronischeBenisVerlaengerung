@@ -11,7 +11,7 @@
 using namespace std;
 using namespace cv;
 
-string windowname = "License Recognization PLATOS";
+string windowname = "License Recognition PLATOS";
 
 bool debug = false;
 

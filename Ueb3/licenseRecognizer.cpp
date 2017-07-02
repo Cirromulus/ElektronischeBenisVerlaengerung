@@ -65,6 +65,10 @@ bool camPath(int camNo){
 
 bool imagePath(string path){
 	Mat display = imread( path, CV_LOAD_IMAGE_COLOR );
+	if(display.size().width == 0 || display.size().height == 0){
+		cout << "Invalid image!" << endl;
+		return false;
+	}
 	if(debug) showScaled(windowname, display);
 	int plateId = pipelineDetect(display);
 	if(plateId >= 0){
@@ -106,6 +110,6 @@ int main( int argc, char** argv )
     		cout << "No image given!" << endl;
     		return -1;
     	}
-		return imagePath(argv[imageCtr]) ? 0 : -1;;
+		return imagePath(argv[imageCtr]) ? 0 : -1;
     }
 }

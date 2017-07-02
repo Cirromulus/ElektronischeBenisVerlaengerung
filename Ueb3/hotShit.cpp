@@ -33,18 +33,32 @@ void tightPreprocessing(cv::Mat &img){
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
-	output.push_back(Point(0,0));
-	output.push_back(Point(input.size().width,0));
-	output.push_back(Point(input.size()));
-	output.push_back(Point(0,input.size().height));
-
-/*
-	//Img 1969
-	output.push_back(Point(190,210));
-	output.push_back(Point(680,196));
-	output.push_back(Point(676,285));
-	output.push_back(Point(197,315));
-*/
+	if(false){
+		float rein = 1;
+		output.push_back(Point2f(rein,rein));
+		output.push_back(Point2f(input.size().width-rein,rein));
+		output.push_back(Point2f(input.size()) - Point2f(rein, rein));
+		output.push_back(Point2f(rein,input.size().height - rein));
+	}else{
+		if(true){
+			//Img 1969
+			output.push_back(Point2f(240,213));
+			output.push_back(Point2f(680,196));
+			output.push_back(Point2f(676,285));
+			output.push_back(Point2f(246,315));
+		}else{
+			//Img 1962
+			output.push_back(Point2f(195,216));
+			output.push_back(Point2f(707,213));
+			output.push_back(Point2f(701,309));
+			output.push_back(Point2f(200,314));
+		}
+		float weg = 10;
+		output[0] += Point2f(-weg, -weg);
+		output[1] += Point2f( weg, -weg);
+		output[2] += Point2f( weg,  weg);
+		output[3] += Point2f(-weg,  weg);
+	}
 
 	Mat canny_output;
    vector<vector<Point> > contours;
@@ -56,7 +70,7 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
    Canny(input, canny_output, perfectThresholdBelieveMe/2, perfectThresholdBelieveMe);
 
-   if(debug) showScaled("canny output", canny_output);
+   //if(debug) showScaled("canny output", canny_output);
 
    /// Find contours
    //findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0) );
@@ -83,6 +97,7 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     
     float width = x_max-x_min, height = y_max-y_min;
     cv::Rect cropRect(x_min, y_min, width, height);
+    //cv::Rect cropRect(0, 0, input.size().width, input.size().height);
     cv::Mat croppedImg = input(cropRect);
     if(debug) showScaled(croppedStr, croppedImg);
    
@@ -101,21 +116,22 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     
     if(debug) showScaled(transformedStr, res);
     
-    
-    
-    return res;
+    return res.clone();
 }
-
-static CustomOCR customOcr;
 
 /**
  * @return true, if plate is one of the known plates
  */
 int megaPlateRecognisificationessing(cv::Mat &input){
+	static CustomOCR customOcr;
+	//static LexiconOCR customOcr;
+
 	if(type2str(input.type()) != string("8UC1")){
-		cout << "Converting input image to grey." << endl;
+		cout << "Converting input image to gray." << endl;
 		cvtColor(input, input, COLOR_RGB2GRAY);
 	}
+	if(debug) cout << "Type: " << type2str(input.type()) << endl;
+	if(debug) cout << "Size: " << input.size() << endl;
 	std::vector<std::string> texts = customOcr.ocr(input);
 	double t_r = (double)getTickCount();
 	int found = -1;

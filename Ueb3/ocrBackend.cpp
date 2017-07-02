@@ -8,6 +8,7 @@
 #include "ocrBackend.hpp"
 #include "knownPlates.hpp"
 #include "helpers.hpp"
+#include <stdlib.h>
 
 #include <iostream>
 
@@ -23,12 +24,13 @@ vector<string> CustomOCR::ocr(cv::Mat &grey){
 
     //This is our only channel, and we dont have to read inverted text
     channels.push_back(grey);
+    //channels.push_back(255-grey);
 
     double t_d = (double)getTickCount();
     // Create ERFilter objects with the 1st and 2nd stage default classifiers
 
 
-    vector<vector<ERStat> > regions(1);
+    vector<vector<ERStat> > regions(channels.size());
     // Apply the default cascade classifier to each independent channel (could be done in parallel)
     for (int c=0; c<(int)channels.size(); c++)
     {
@@ -71,7 +73,7 @@ vector<string> CustomOCR::ocr(cv::Mat &grey){
     Mat out_img_segmentation = Mat::zeros(color.rows+2, color.cols+2, CV_8UC1);
     color.copyTo(out_img);
     color.copyTo(out_img_detection);
-    float scale_img  = 750.f/color.rows;
+    float scale_img  = 800.f/color.cols;
     float scale_font = (float)(scale_img)/2.f;
     vector<string> words_detection;
 
@@ -202,4 +204,50 @@ void CustomOCR::er_draw(vector<Mat> &channels, vector<vector<ERStat> > &regions,
 
 bool CustomOCR::sort_by_length(const string &a, const string &b){
 	return (a.size()>b.size());
+}
+
+//-----------------------------------
+
+LexiconOCR::LexiconOCR(){
+	for(unsigned int i = 0; i < numberOfKnownPlates; i++){
+		char *plate = strdup(knownPlates[i]);
+		char *subelem = strtok(plate, ":");
+		while(subelem) {
+			lexicon.push_back(string(subelem));
+			subelem = strtok(NULL, ":");
+		}
+	}
+	if(debug){
+		cout << "Lexicon: " << endl;
+		for(string elem : lexicon){
+			cout << "\t " << elem << endl;
+		}
+	}
+	// must have the same order as the clasifier output classes
+	vocabulary = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	emission_p = Mat::eye(62,62,CV_64FC1);
+	createOCRHMMTransitionsTable(vocabulary,lexicon,transition_p);
+	ocrDecoder = OCRBeamSearchDecoder::create(
+				loadOCRBeamSearchClassifierCNN("OCRBeamSearch_CNN_model_data.xml.gz"),
+				vocabulary, transition_p, emission_p, OCR_DECODER_VITERBI, 50);
+}
+
+std::vector<std::string> LexiconOCR::ocr(Mat &grey){
+    double t_r = (double)getTickCount();
+    string output;
+
+    vector<Rect>   boxes;
+    vector<string> words;
+    vector<float>  confidences;
+    ocrDecoder->run(grey, output, &boxes, &words, &confidences, OCR_LEVEL_WORD);
+
+    if(debug) cout << "OCR output = \"" << output << "\". Decoded in "
+         << ((double)getTickCount() - t_r)*1000/getTickFrequency() << " ms." << endl << endl;
+
+    if(debug){
+    	for(unsigned int i = 0; i < boxes.size(); i++){
+    		cout << words[i] << " conf: " << confidences[i] << endl;
+    	}
+    }
+    return words;
 }

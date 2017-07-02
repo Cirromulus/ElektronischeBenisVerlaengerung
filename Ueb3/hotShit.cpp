@@ -185,19 +185,20 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 			sortedPoints.push_back(elem);
 		}
 
-		//sort points by accumlated distance -> order will be: top_left, bottom_left, top_right, bottom_right
+		//sort points by accumulated distance -> order will be: top_left, bottom_left, top_right, bottom_right
 		sort(sortedPoints.begin(), sortedPoints.end());
 
-		//switch positions of top_right and bottom_right for coherent representation of contour
-		accDistanceAndPoint bottom_right_corner=sortedPoints[3];
-		sortedPoints[3]=sortedPoints[2];
-		sortedPoints[2]=bottom_right_corner;
+		//reposition element as order should be: top_left, top_right, bottom_right, bottom_left
+		sortedPoints.push_back(sortedPoints[1]);
+		sortedPoints.erase(sortedPoints.begin()+1);
 
 		//output points
 		for(accDistanceAndPoint elem : sortedPoints){
 			output.push_back(cv::Point2f(elem.pt));
 		}
 
+
+		//Additional output for debug mode
 		if(debug){	//show points of found contour after simplification to only 4 points
 			cout << "largest contour after approximation: " << largest_contour[0] << endl;
 
@@ -230,16 +231,6 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		}
 
 	}
-//
-//
-//	    // create a toolbar
-//	    createTrackbar("Binary lower threshold", "Edge map", &binThresh, 255, onTrackbar);
-//	    createTrackbar("Canny lower threshold", "Edge map", &edgeThresh_lower, 255, onTrackbar);
-//	    createTrackbar("Canny uppper threshold", "Edge map", &edgeThresh_upper, 255, onTrackbar);
-//
-//	    createTrackbar("floodfill lower threshold", "floodfill", &floodThresh_lower, 255, onTrackbarTwo);
-//	    createTrackbar("floodfill upper threshold", "floodfill", &floodThresh_upper, 255, onTrackbarTwo);
-
 }
 
 

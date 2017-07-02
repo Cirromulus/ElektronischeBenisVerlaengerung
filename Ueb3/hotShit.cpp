@@ -31,16 +31,14 @@ void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
     if (debug) imshow("Greyscale (input)", img);
 
-    Mat new_image =  img.clone();
-
 	// Set threshold and maxValue
    // double thresh = 80;
 
 
-    uchar in_min=180;
+    uchar in_min=100;
     uchar in_max=255;
-    double gamma=1.8;
-    uchar out_min=0;
+    double gamma=2;
+    uchar out_min=20;
     uchar out_max=255;
 
     double cutoff = 120;
@@ -60,15 +58,13 @@ void tightPreprocessing(cv::Mat &img){
 				pixel= (pixel > 0) ? pow(pixel,gamma) : 0;
 				  //rescale range and round correctly
 				pixel = floor((pixel * (out_max-out_min) + out_min)+0.5);
-    	   	    new_image.at<uchar>(y,x) = saturate_cast <uchar> (pixel);
+    	   	    img.at<uchar>(y,x) = saturate_cast <uchar> (pixel);
               }
        }
-
-    img=new_image.clone();
     //equalizeHist( new_image, new_image );
 
    if (debug){
-	   imshow( "Preprocessed image", new_image);
+	   imshow( "Preprocessed image", img);
    }
 }
 

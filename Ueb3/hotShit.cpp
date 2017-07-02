@@ -29,7 +29,7 @@ using namespace  cv;
 
 void tightPreprocessing(cv::Mat &img){
     cvtColor(img, img, COLOR_RGB2GRAY);
-    imshow("greyscale", img);
+    if (debug) imshow("Greyscale (input)", img);
 
     Mat new_image =  img.clone();
 
@@ -39,7 +39,7 @@ void tightPreprocessing(cv::Mat &img){
 
     uchar in_min=180;
     uchar in_max=255;
-    uchar gamma=1;
+    double gamma=1.8;
     uchar out_min=0;
     uchar out_max=255;
 
@@ -57,13 +57,14 @@ void tightPreprocessing(cv::Mat &img){
     	   	   	  // normalize
 				pixel = (pixel-in_min) / (in_max-in_min);
 				  // transform gamma
-				pixel= pow(pixel,gamma);
-				  //rescale range
-				pixel = pixel * (out_max-out_min) + out_min;
-
+				pixel= (pixel > 0) ? pow(pixel,gamma) : 0;
+				  //rescale range and round correctly
+				pixel = floor((pixel * (out_max-out_min) + out_min)+0.5);
     	   	    new_image.at<uchar>(y,x) = saturate_cast <uchar> (pixel);
               }
        }
+
+    img=new_image.clone();
     //equalizeHist( new_image, new_image );
 
    if (debug){
@@ -82,32 +83,17 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		inline bool operator<(const accDistanceAndPoint& a) const{
 			return  accDist < a.accDist;
 		}
-	//	inline bool operator!=(accDistanceAndPoint left, accDistanceAndPoint right){
-	//		return left.accDist != right.accDist;
-	//	}
-
-
-	//		//returns true if distance 1 is smaller than distance 2
-	//		bool compareDistances(accDistanceAndPoint obj1, accDistanceAndPoint obj2){
-	//			int dist1 = obj1.accDist;
-	//			int dist2 = obj2.accDist;
-	//			return (dist1<dist2);
-	//
-	//		}
-
 	};
-
 
 	int edgeThresh_lower = 100;
 
 	RNG rng(12345);
-
 	Mat edge, cedge, im_flood, im_contours;
-
 	vector<vector<Point>> foundContours;
 	vector<vector<Point>> filteredContours;
-
 	vector<Vec4i> hierarchy;
+
+	//blurring input and converting to grey
 
 	blur(input, edge, Size(3,3));
 	cvtColor(input, input, COLOR_GRAY2RGB);
@@ -124,9 +110,6 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 	//find contours in canny output
 	findContours(edge, foundContours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1);
 	if(foundContours.size()>0){
-		input.copyTo(im_contours, input);
-
-		filteredContours.resize(foundContours.size());
 
 		//storage for largest contour
 		int area = 0;
@@ -134,6 +117,10 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		int threshold_approximation=3;
 		vector<vector<Point>> largest_contour;
 		largest_contour.resize(1);
+
+		im_contours=input.clone();
+
+		filteredContours.resize(foundContours.size());
 
 		//srtorage for Points of final contour with corresponding distance to origin
 		vector<accDistanceAndPoint> sortedPoints;
@@ -178,12 +165,12 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 		sortedPoints[3]=sortedPoints[2];
 		sortedPoints[2]=bottom_right_corner;
 
-
+		//output points
 		for(accDistanceAndPoint elem : sortedPoints){
 			output.push_back(cv::Point2f(elem.pt));
 		}
 
-		if(debug){	//show points of found contour after simplificatition to only 4 points
+		if(debug){	//show points of found contour after simplification to only 4 points
 			cout << "largest contour after approximation: " << largest_contour[0] << endl;
 
 			for( uint i = 0; i<filteredContours.size(); i++ ){

@@ -83,7 +83,7 @@ bool imagePath(string path){
 	}
 	if(debug) showScaled(windowname, display);
 	int plateId = pipelineDetect(display);
-	cout << path << ": "
+	cout << path << ": ";
 	if(plateId >= 0){
 	   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
 	}else{

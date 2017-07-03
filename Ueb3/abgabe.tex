@@ -1,0 +1,59 @@
+\documentclass{../Vorlage/sebDenCls}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{todo}
+\usepackage{longtable}
+\lstset{language=C++,basicstyle=\footnotesize}
+\graphicspath{ {Bilder/Doku/} }
+
+\setcounter{section}{3}
+
+\begin{document}
+\fach{Echtzeitbildverarbeitung}
+\nr{3}
+\abgabe{13.06.2017}
+\semester{SoSe17}
+\blatt{Udo Frese}{Lukas Bertram}{(lbertram@uni-bremen.de)}{Sebastian Bliefert}{(bliefert@uni-bremen.de)}{Johannes Hochbein}{(hochbein@uni-bremen.de)}{Pascal Pieper}{(ppieper@uni-bremen.de)}
+
+
+\section{Der Algorithmus}
+Erklärung des Frameworks, Abfolge der GROBEN Algos
+\#P
+\subsection{CropImage}
+muss nicht, weil. \$J
+\subsection{Preprocessing}
+Dunkel abschneiden.
+\#L
+
+\subsection{DetectLines}
+Wir holen keine Linien, weil das zu zu vielen Fehlerkennungen geführt hat.
+\#L
+\subsection{findPlates}
+Canny, contour, convex, nach Fläche sortieren, approx poly vereinfachen.
+\#L
+\subsection{cropPlate}
+Crops.
+\$B
+\subsection{deWarp}
+Warps. Wurst.
+\$B
+\subsection{getText}
+Findet Text mit tesseract.
+\#P
+\subsection{lookupPlate}
+Sucht nach definierten Kennzeichen in erkanntem Text.
+\#P
+\section{Ergebnisse}
+
+Bilder von funktionierenden debug Ausgaben. Sagen, dass sowohl img als auch live geht.
+\#J
+\section{Ausblick}
+
+Was geht nicht? Die Schriftart ist schwer für tesseract. Anlernen müsste man.
+Live geht es besser, weil wir mehr Versuche haben, und dann einzelne Buchstaben 
+\#J
+\end{document}
+
+

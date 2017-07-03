@@ -29,6 +29,7 @@ using namespace  cv;
 
 
 
+
 void tightPreprocessing(cv::Mat &img, bool live){
     cvtColor(img, img, COLOR_RGB2GRAY);
     if (debug) imshow("Greyscale (input)", img);
@@ -37,15 +38,15 @@ void tightPreprocessing(cv::Mat &img, bool live){
    // double thresh = 80;
 
 	//static img params
-	uchar in_min=140;
+	uchar in_min=160;
 	uchar in_max=255;
-	double gamma=1.2;
-	uchar out_min=0;
-	uchar out_max=255;
+	double gamma=1.1;
+	uchar out_min=1;
+	uchar out_max=254;
 
     if(live){
 		//Live optimized params
-		in_min= 150;
+		in_min= 130;
 		in_max= 255;
 		gamma = 0.5;
 		out_min=0;
@@ -201,7 +202,6 @@ void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output){
 		if(debug){
 
 		    namedWindow("Edge map", 1);
-		    namedWindow("source",1);
 		    namedWindow("contours",1);
 
 			//show points of found contour after simplification to only 4 points
@@ -229,8 +229,6 @@ void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output){
 
 			cout << "Corner points of plate region: " << output << endl;
 
-
-		    imshow("source", input);
 			imshow("contours",im_contours);
 
 		}

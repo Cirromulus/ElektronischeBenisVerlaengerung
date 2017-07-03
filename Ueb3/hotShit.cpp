@@ -37,7 +37,7 @@ void tightPreprocessing(cv::Mat &img, bool live){
 	//static img params
 	uchar in_min=140;
 	uchar in_max=255;
-	double gamma=1;
+	double gamma=1.2;
 	uchar out_min=0;
 	uchar out_max=255;
 

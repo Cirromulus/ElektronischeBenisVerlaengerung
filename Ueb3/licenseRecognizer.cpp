@@ -35,6 +35,14 @@ int pipelineDetect(Mat &img, bool live = false){
 	}
     adaptiveThreshold(plateImg, plateImg, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 153, 10);
 */
+    int erosion_size = 2;
+    dilate(plateImg, plateImg, getStructuringElement( MORPH_ELLIPSE,
+            Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+            Point( erosion_size, erosion_size ) ));
+    erode(plateImg, plateImg, getStructuringElement( MORPH_ELLIPSE,
+            Size( 2*erosion_size + 2, 2*erosion_size+2 ),
+            Point( erosion_size, erosion_size ) ));
+
     int res =  megaPlateRecognisificationessing(plateImg);
     e = getTickCount();
     if(debug) cout << "\r"
@@ -103,7 +111,7 @@ bool imagePath(string path){
 	   if(debug){
 		   drawImgBorder(display, 0);
 		   showScaled(windowname, display);
-	   	   }
+	   }
 	}
 	if(debug) waitKey();
 	return plateId >= 0;

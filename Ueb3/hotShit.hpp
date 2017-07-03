@@ -9,7 +9,7 @@
 
 #include "opencv2/features2d/features2d.hpp"
 
-void tightPreprocessing(cv::Mat &img);
+void tightPreprocessing(cv::Mat &img, bool live = false);
 
 //Struct for storing Point and accumulated distance to origin
 struct accDistanceAndPoint{

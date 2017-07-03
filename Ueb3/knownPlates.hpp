@@ -8,9 +8,11 @@
 #pragma once
 
 static const char* knownPlates[] = {
-		"HB:PP:434",
+		//"HB:PP:434",
 		"HB:TQ:883",
-		"HB:LRP:92"
+		//"HB:LRP:92",
+		"HB:XY:84",
+		"HB:TI:326"
 };
 static constexpr unsigned int numberOfKnownPlates =
 		sizeof(knownPlates)/sizeof(knownPlates[0]);

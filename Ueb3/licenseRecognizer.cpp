@@ -17,11 +17,11 @@ bool debug = false;
 
 /***************************************************************************/
 
-int pipelineDetect(Mat &img){
+int pipelineDetect(Mat &img, bool live = false){
     vector<Point2f> plateOutline;
     double a,b,c,d,e;
     a = getTickCount();
-    tightPreprocessing(img);
+    tightPreprocessing(img, live);
     b = getTickCount();
     hardSegmentation(img, plateOutline);
     c = getTickCount();
@@ -29,7 +29,7 @@ int pipelineDetect(Mat &img){
     d = getTickCount();
     int res =  megaPlateRecognisificationessing(plateImg);
     e = getTickCount();
-    cout << "\r"
+    if(debug) cout << "\r"
     		"Prepros: " << (int)((b-a)*1000/getTickFrequency()) << "ms, "
     		"segment: " << (int)((c-b)*1000/getTickFrequency()) << "ms, "
 			"perspec: " << (int)((d-c)*1000/getTickFrequency()) << "ms, "
@@ -60,7 +60,7 @@ bool camPath(int camNo){
 
 		if(debug) cvShowImage( windowname.c_str(), iplImg);
 
-		plateId = pipelineDetect(display);
+		plateId = pipelineDetect(display, true);
 		if(plateId >= 0){
 		   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
 		   foundAnyPlate = true;
@@ -83,10 +83,11 @@ bool imagePath(string path){
 	}
 	if(debug) showScaled(windowname, display);
 	int plateId = pipelineDetect(display);
+	cout << path << ": "
 	if(plateId >= 0){
 	   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
 	}else{
-	   if(debug) cout << "No known Plate found." << endl;
+	   cout << "No known Plate found." << endl;
 	}
 	if(debug) waitKey();
 	return plateId >= 0;
@@ -122,6 +123,8 @@ int main( int argc, char** argv )
     		cout << "No image given!" << endl;
     		return -1;
     	}
-		return imagePath(argv[imageCtr]) ? 0 : -1;
+    	while(imageCtr < argc){
+    		imagePath(argv[imageCtr++]);
+    	}
     }
 }

@@ -27,32 +27,30 @@ using namespace  cv;
 
 
 
-void tightPreprocessing(cv::Mat &img){
+void tightPreprocessing(cv::Mat &img, bool live){
     cvtColor(img, img, COLOR_RGB2GRAY);
     if (debug) imshow("Greyscale (input)", img);
 
 	// Set threshold and maxValue
    // double thresh = 80;
 
+	//static img params
+	uchar in_min=180;
+	uchar in_max=255;
+	double gamma=1;
+	uchar out_min=0;
+	uchar out_max=255;
 
-/*  //Live optimized params
-	uchar in_min=150;
-    uchar in_max=255;
-    double gamma=0.5;
-    uchar out_min=0;
-    uchar out_max=255;*/
-
-    //static img params
-    uchar in_min=180;
-    uchar in_max=255;
-    double gamma=1;
-    uchar out_min=0;
-    uchar out_max=255;
+    if(live){
+		//Live optimized params
+		in_min= 150;
+		in_max= 255;
+		gamma = 0.5;
+		out_min=0;
+		out_max=255;
+    }
 
     double pixel = 0;
-
-//    // Binary Threshold
-//    threshold(img,img, thresh, maxValue, THRESH_TOZERO);
 
     //Note: color correction algorithm inspired by [https://pippin.gimp.org/image-processing/chap_point.html]
     for( int y = 0; y < img.rows; y++ )
@@ -110,6 +108,7 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 	RNG rng(12345);
 	Mat edge, cedge, im_flood, im_contours;
 	vector<vector<Point>> foundContours;
+	vector<vector<Point>> foundConvexHulls;
 	vector<vector<Point>> filteredContours;
 	vector<Vec4i> hierarchy;
 
@@ -129,7 +128,12 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
 	//find contours in canny output
 	findContours(edge, foundContours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1);
-	if(foundContours.size()>0){
+	foundConvexHulls.resize(foundContours.size());
+	for(unsigned int i = 0; i < foundContours.size(); i++){
+		convexHull(foundContours[i], foundConvexHulls[i]);
+	}
+
+	if(foundConvexHulls.size()>0){
 
 		//storage for largest contour
 		int area = 0;
@@ -140,14 +144,14 @@ void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
 
 		im_contours=input.clone();
 
-		filteredContours.resize(foundContours.size());
+		filteredContours.resize(foundConvexHulls.size());
 
 		//srtorage for Points of final contour with corresponding distance to origin
 		vector<accDistanceAndPoint> sortedPoints;
 
 		//get largest contour by successive comparison of area sizes
-		for( size_t k = 0; k < foundContours.size(); k++ ){
-			approxPolyDP(Mat(foundContours[k]), filteredContours[k],threshold_approximation, true);
+		for( size_t k = 0; k < foundConvexHulls.size(); k++ ){
+			approxPolyDP(Mat(foundConvexHulls[k]), filteredContours[k],threshold_approximation, true);
 			area = contourArea(filteredContours[k]);
 
 			if(area>=max_area){

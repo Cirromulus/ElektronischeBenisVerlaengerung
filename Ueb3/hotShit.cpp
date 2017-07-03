@@ -21,6 +21,8 @@
 #include <vector>
 #include <climits>
 
+#define BORDER 5
+
 using namespace std;
 using namespace  cv;
 
@@ -239,10 +241,11 @@ void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output){
 
 //Also would crop image
 cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline){
-	if(outline.size() != 4){
+    if(outline.size() != 4){
 		if(debug) cout << "Outline has " << outline.size() << " edges. Skipping Perspective Warp." << endl;
 		return input;
 	}
+    
     string croppedStr = "cropped";
     string transformedStr = "transformed";
     if(debug) {
@@ -261,7 +264,6 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     
     float width = x_max-x_min, height = y_max-y_min;
     cv::Rect cropRect(x_min, y_min, width, height);
-    //cv::Rect cropRect(0, 0, input.size().width, input.size().height);
     cv::Mat croppedImg = input(cropRect);
     if(debug) showScaled(croppedStr, croppedImg);
    
@@ -306,7 +308,7 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     }
     
     if(debug){
-		cout << "scrPoints: " << srcPoints << endl;
+		cout << "srcPoints: " << srcPoints << endl;
 		cout << "destPoints: " << destPoints << endl;
 	}
 
@@ -315,6 +317,9 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     
     cv::warpPerspective(croppedImg, res, trans, res.size());
     
+//     if(debug) showScaled(transformedStr, res);
+    
+    copyMakeBorder(res, res, BORDER, BORDER, BORDER, BORDER, BORDER_CONSTANT, Scalar(255));
     if(debug) showScaled(transformedStr, res);
 
     return res.clone();

@@ -21,7 +21,7 @@
 #include <vector>
 #include <climits>
 
-#define BORDER 5
+#define BORDER plateHeight / 20
 
 using namespace std;
 using namespace  cv;

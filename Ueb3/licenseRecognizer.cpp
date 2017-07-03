@@ -22,20 +22,23 @@ int pipelineDetect(Mat &img, bool live = false){
     double a,b,c,d,e;
     a = getTickCount();
     Mat first = img.clone();
+    cvtColor(first, first, CV_BGR2GRAY);
     tightPreprocessing(img, live);
     b = getTickCount();
     hardSegmentation(img, plateOutline);
     c = getTickCount();
     Mat plateImg = phatPerspectiveNormalizer(first, plateOutline);
     d = getTickCount();
-/*
-	if(type2str(plateImg.type()) != string("8UC1")){
-		if(debug) cout << "Converting input image to gray, because someone forgot that" << endl;
-		cvtColor(plateImg, plateImg, COLOR_RGB2GRAY);
-	}
-    adaptiveThreshold(plateImg, plateImg, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 153, 10);
-*/
-    int res =  megaPlateRecognisificationessing(plateImg);
+
+    int erosion_size = 2;
+    dilate(plateImg, plateImg, getStructuringElement( MORPH_ELLIPSE,
+            Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+            Point( erosion_size, erosion_size ) ));
+    erode(plateImg, plateImg, getStructuringElement( MORPH_ELLIPSE,
+            Size( 2*erosion_size + 2, 2*erosion_size+2 ),
+            Point( erosion_size, erosion_size ) ));
+    int res = megaPlateRecognisificationessing(plateImg);
+
     e = getTickCount();
     if(debug) cout << "\r"
     		"Prepros: " << (int)((b-a)*1000/getTickFrequency()) << "ms, "
@@ -103,7 +106,7 @@ bool imagePath(string path){
 	   if(debug){
 		   drawImgBorder(display, 0);
 		   showScaled(windowname, display);
-	   	   }
+	   }
 	}
 	if(debug) waitKey();
 	return plateId >= 0;

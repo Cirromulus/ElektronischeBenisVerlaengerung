@@ -76,34 +76,35 @@ void tightPreprocessing(cv::Mat &img){
 }
 
 void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
-	/*//Testing code
- 	 if(false){
-		float rein = 1;
-		output.push_back(Point2f(rein,rein));
-		output.push_back(Point2f(input.size().width-rein,rein));
-		output.push_back(Point2f(input.size()) - Point2f(rein, rein));
-		output.push_back(Point2f(rein,input.size().height - rein));
-	}else{
-		if(true){
-			//Img 1969
-			output.push_back(Point2f(240,213));
-			output.push_back(Point2f(680,196));
-			output.push_back(Point2f(676,285));
-			output.push_back(Point2f(246,315));
-		}else{
-			//Img 1962
-			output.push_back(Point2f(195,216));
-			output.push_back(Point2f(707,213));
-			output.push_back(Point2f(701,309));
-			output.push_back(Point2f(200,314));
-		}
-		float weg = 10;
-		output[0] += Point2f(-weg, -weg);
-		output[1] += Point2f( weg, -weg);
-		output[2] += Point2f( weg,  weg);
-		output[3] += Point2f(-weg,  weg);
-	}
-	*/
+// 	//Testing code
+//  	 if(false){
+// 		float rein = 1;
+// 		output.push_back(Point2f(rein,rein));
+// 		output.push_back(Point2f(input.size().width-rein,rein));
+// 		output.push_back(Point2f(input.size()) - Point2f(rein, rein));
+// 		output.push_back(Point2f(rein,input.size().height - rein));
+// 	}else{
+// 		if(true){
+// 			//Img 1969
+// 			output.push_back(Point2f(240,213));
+// 			output.push_back(Point2f(680,196));
+// 			output.push_back(Point2f(676,285));
+// 			output.push_back(Point2f(246,315));
+// 		}else{
+// 			//Img 1962
+// 			output.push_back(Point2f(195,216));
+// 			output.push_back(Point2f(300,213));
+// 			output.push_back(Point2f(300,309));
+// 			output.push_back(Point2f(200,314));
+// 		}
+// // 		float weg = 10;
+// // 		output[0] += Point2f(-weg, -weg);
+// // 		output[1] += Point2f( weg, -weg);
+// // 		output[2] += Point2f( weg,  weg);
+// // 		output[3] += Point2f(-weg,  weg);
+//     return;
+// 	}
+	
 
 	int edgeThresh_lower = 100;
 	RNG rng(12345);
@@ -260,7 +261,38 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     cv::Mat croppedImg = input(cropRect);
     if(debug) showScaled(croppedStr, croppedImg);
    
-    std::vector<cv::Point2f> destPoints = {cv::Point2f(0, 0), cv::Point2f(width, 0), cv::Point2f(width, height), cv::Point2f(0, height)};
+    int plateWidth, plateHeight;
+    //determinine plate format
+    if(width / height < 1.8)    //two-rowed plate
+    {
+        if(height >= 200)
+        {
+            plateHeight = 200;
+            plateWidth= 340;
+        }
+        else
+        {
+            plateHeight = height;
+            plateWidth = height * 1.7; // 1.7 = 340/200
+        }
+    }
+    else //single-rowed plate
+    {
+        if(height >= 110)
+        {
+            plateHeight = 110;
+            plateWidth= 520;
+        }
+        else
+        {
+            plateHeight = height;
+            plateWidth = height * 4.73; //4.73 = 520mm / 110mm
+        }
+    }
+    
+    
+    
+    std::vector<cv::Point2f> destPoints = {cv::Point2f(0, 0), cv::Point2f(plateWidth, 0), cv::Point2f(plateWidth, plateHeight), cv::Point2f(0, plateHeight)};
     
     std::vector<cv::Point2f> srcPoints;
 
@@ -275,7 +307,7 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
 	}
 
     Mat trans = cv::getPerspectiveTransform(srcPoints, destPoints);
-    Mat res = input(cropRect);
+    Mat res(plateHeight, plateWidth, croppedImg.type());
     
     cv::warpPerspective(croppedImg, res, trans, res.size());
     

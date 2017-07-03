@@ -13,16 +13,16 @@
 \begin{document}
 \fach{Echtzeitbildverarbeitung}
 \nr{3}
-\abgabe{13.06.2017}
+\abgabe{04.07.2017}
 \semester{SoSe17}
 \blatt{Udo Frese}{Lukas Bertram}{(lbertram@uni-bremen.de)}{Sebastian Bliefert}{(bliefert@uni-bremen.de)}{Johannes Hochbein}{(hochbein@uni-bremen.de)}{Pascal Pieper}{(ppieper@uni-bremen.de)}
 
 
-\section{Der Algorithmus}
+\section{Aufgabennumme??}
 Erklärung des Frameworks, Abfolge der GROBEN Algos
 \#P
 \subsection{CropImage}
-muss nicht, weil. \$J
+Die Methode wird nicht mehr Benötigt. Die Bilder sind im Urzustand nicht so groß wie befürchtet. Ein weiterer Vorteil ist, dass der Auswertbare Bildbereich nicht von Anfang an beschnitten wird. Dies gibt Später mehr Spielraum für die Positionierung der Fahrzeuge.
 \subsection{Preprocessing}
 Dunkel abschneiden.
 \#L
@@ -46,14 +46,32 @@ Findet Text mit tesseract.
 Sucht nach definierten Kennzeichen in erkanntem Text.
 \#P
 \section{Ergebnisse}
+\textbf{Testbedingungen} \\
+Für den Test unserer Nummernschilderkennung haben wir verschiedene „Fälle“ generiert. Jeder Fall soll hierbei ein Beispiel eines sich dem Tor nähernden Fahrzeugs sein. So zeigt der Fall „A“ das Fahrzeug HB TQ-883 welches sich ohne Winkel der Kamera nähert. Die Verschieden Bilder sollen hierbei den Zeitlichen Verlauf des heran Fahrens darstellen. Es würde ausreichen, wenn auf einem der Bilder das Kennzeichen erkannt wird, da somit das Tor geöffnet werden würde während sich das Fahrzeug nähert. Da Fahrzeuge nicht immer gleich fahren, haben wir weitere Fälle erstellt, bei denen das Fahrzeug jeweils einen Winkel zur Kamera hat, sodass diese nicht Frontal auf das Kennzeichen schaut. Auch hier nähert sich das Fahrzeug mit jedem Bild wieder an die Kamera an (mit gleichbleibenden Winkel). Für jede Winkeländerung wurde ein neuer Fall erstellt.
+Sodass die Fälle A-E alle zum gleichen Fahrzeug gehören aber unterschiedliche Anfahrten darstellen.
 
-Bilder von funktionierenden debug Ausgaben. Sagen, dass sowohl img als auch live geht.
-\#J
+Die von uns betrachteten Winkel sind teilweise sehr groß und überschreiten die von uns erwarteten Winkel die innerhalb einer Auffahrt gemacht werden können erheblich. Dies soll sicherstellen, dass die Erkennung auch unter extremen Bedingungen zufriedenstellend funktioniert.
+
+Die Fälle F-J wurden für das Fahrzeug HB XY-84 erstellt. Hierbei gab es die weitere Schwierigkeit, dass die weiße Kunststoffoberfläche des Fahrzeuges das Licht der Kamera ähnlich gut reflektiert wie das Kennzeichen, sodass eine Abgrenzung des Kennzeichens schwieriger als bei den vorherigen Fällen ist.
+
+Die Fälle K-O gehören zum Fahrzeug HB TI-326. Hier besteht die zusätzliche Schwierigkeit darin, dass das Fahrzeug durch eine längere Autobahnfahrt ein mit Insekten verschmutztes Kennzeichen hat.
+
+Ein Problem bei der Erkennung mit Tesseract war, dass die Schriftart von Kennzeichen (FE-Schrift)  dafür entwickelt wurde, dass diese nicht Verfälscht werden können (Beispielsweise 3 zu 8). Diese sehr spezielle Schriftart wird deshalb allerdings standardmäßig nicht besonders gut erkannt. Da ein Anlernen der Schriftart relativ Zeitintensiv ist, haben wir uns für unseren Test darauf beschränkt auch ähnliche Buchstaben z.B. V an stelle von Y zu zu lassen.
+
+\textbf{Ergebnis} \\
+Es hat sich gezeigt, dass in jedem Fall mindestens ein Bild erkannt wurde. Bei den einfachen Fällen A-E wurde in der Regel sogar auf fast allen Bilder das Kennzeichen richtig erkannt. Das Ergebnis Aller Tests ist in Bild 1 zu sehen.
+
+Das Ergebnis eines einzelnen erkannten Kennzeichens ist exemplarisch in Bild 2 dargestellt.
+
+
+\textbf{Bewertung} \\
+Es hat sich gezeigt, dass die von uns erstellte Kennzeichenerkennung bereits sehr gute Ergebnisse liefert insbesondere, da in der Realität ein Videostream von den heranfahrenden Fahrzeug vorhanden ist, sodass bei einer Geschwindigkeit von 10-30 Bildern/Sekunde eine deutlich größere Anzahl von Bildern zur Verfügung steht. Außerdem konnte bei Tests mit einer Webcam bereits beobachtet werden, dass falsch erkannte Buchstaben häufig „Springen“ sodass diese temporär auch richtig erkannt wurden. 
+
+Dies zeigt allerdings auch, dass dieses System nicht für Sicherheitsrelevante Zugänge geeignet ist, sondern rein der Erhöhung des Komforts dienen sollte. Eine Öffnung durch Fehlerkennung oder Manipulation durch einen Ausdruck eines Kennzeichens können nicht ausgeschlossen werden.
 \section{Ausblick}
+Als Ausblick für eine zukünftige Verbesserung möchten wir die Möglichkeit nennen, die Schriftart der Kennzeichen an zu lernen, sodass Fehlerkennungen deutlich seltener vorkommen sollten.
 
-Was geht nicht? Die Schriftart ist schwer für tesseract. Anlernen müsste man.
-Live geht es besser, weil wir mehr Versuche haben, und dann einzelne Buchstaben 
-\#J
+Eine Weitere Verbesserung wäre es, eine Kamera mit Infrarotfilter einzusetzen und die Einfahrt mit Infrarotstrahlern zu beleuchten, dies hätte den Effekt, dass auf den Bildern Hauptsächlich nur noch das Kennzeichen zu sehen ist. 
 \end{document}
 
 

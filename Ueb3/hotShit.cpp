@@ -35,13 +35,20 @@ void tightPreprocessing(cv::Mat &img){
    // double thresh = 80;
 
 
-    uchar in_min=100;
+/*  //Live optimized params
+	uchar in_min=150;
     uchar in_max=255;
-    double gamma=2;
-    uchar out_min=20;
+    double gamma=0.5;
+    uchar out_min=0;
+    uchar out_max=255;*/
+
+    //static img params
+    uchar in_min=180;
+    uchar in_max=255;
+    double gamma=1;
+    uchar out_min=0;
     uchar out_max=255;
 
-    double cutoff = 120;
     double pixel = 0;
 
 //    // Binary Threshold
@@ -51,7 +58,7 @@ void tightPreprocessing(cv::Mat &img){
     for( int y = 0; y < img.rows; y++ )
        { for( int x = 0; x < img.cols; x++ )
             {
-    	   	   	pixel = (img.at<uchar>(y,x) > cutoff) ? img.at<uchar>(y,x) : 0;
+    	   	   	pixel = img.at<uchar>(y,x);
     	   	   	  // normalize
 				pixel = (pixel-in_min) / (in_max-in_min);
 				  // transform gamma

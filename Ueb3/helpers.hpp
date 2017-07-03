@@ -42,6 +42,7 @@ void drawApproxes(cv::Mat& dst, std::vector<std::vector<cv::Point> > app, int si
 void drawRect(cv::Mat& dst, cv::RotatedRect& rec, int i);
 void drawRects(cv::Mat& dst, std::vector<cv::RotatedRect>& rects);
 
+void drawImgBorder(cv::Mat& display, int color);
 // Draws a cross at p of given size (width=height) and color
 void drawCross (cv::Mat& display, cv::Point p, int size, cv::Scalar color);
 

@@ -67,6 +67,13 @@ void drawRects(Mat& dst, vector<RotatedRect>& rects){
 	}
 }
 
+void drawImgBorder(Mat& display, int color){
+	int width = display.cols;
+    int height = display.rows;
+    RotatedRect rect = RotatedRect(Point2f(width/2,height/2), Size2f(width,height), 0);
+    drawRect(display, rect,color);
+}
+
 // Draws a cross at p of given size (width=height) and color
 void drawCross (Mat& display, Point p, int size, Scalar color) {
    line (display, Point (p.x-size/2, p.y-size/2), Point (p.x+size/2, p.y+size/2), color, 3);

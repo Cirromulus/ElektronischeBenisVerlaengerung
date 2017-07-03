@@ -86,8 +86,16 @@ bool imagePath(string path){
 	cout << path << ": ";
 	if(plateId >= 0){
 	   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
+	   if(debug){
+		  drawImgBorder(display, 1);
+		  showScaled(windowname, display);
+	   }
 	}else{
 	   cout << "No known Plate found." << endl;
+	   if(debug){
+		   drawImgBorder(display, 0);
+		   showScaled(windowname, display);
+	   	   }
 	}
 	if(debug) waitKey();
 	return plateId >= 0;

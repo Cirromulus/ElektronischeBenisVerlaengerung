@@ -22,7 +22,7 @@ struct accDistanceAndPoint{
 	}
 };
 
-void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output);
+void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output);
 
 cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline);
 

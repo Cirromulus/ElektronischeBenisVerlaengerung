@@ -21,12 +21,20 @@ int pipelineDetect(Mat &img, bool live = false){
     vector<Point2f> plateOutline;
     double a,b,c,d,e;
     a = getTickCount();
+    Mat first = img.clone();
     tightPreprocessing(img, live);
     b = getTickCount();
     hardSegmentation(img, plateOutline);
     c = getTickCount();
-    Mat plateImg = phatPerspectiveNormalizer(img, plateOutline);
+    Mat plateImg = phatPerspectiveNormalizer(first, plateOutline);
     d = getTickCount();
+/*
+	if(type2str(plateImg.type()) != string("8UC1")){
+		if(debug) cout << "Converting input image to gray, because someone forgot that" << endl;
+		cvtColor(plateImg, plateImg, COLOR_RGB2GRAY);
+	}
+    adaptiveThreshold(plateImg, plateImg, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 153, 10);
+*/
     int res =  megaPlateRecognisificationessing(plateImg);
     e = getTickCount();
     if(debug) cout << "\r"
@@ -131,8 +139,13 @@ int main( int argc, char** argv )
     		cout << "No image given!" << endl;
     		return -1;
     	}
+    	double positives = 0, negatives = 0;
     	while(imageCtr < argc){
-    		imagePath(argv[imageCtr++]);
+    		if(imagePath(argv[imageCtr++]) > 0)
+    			positives++;
+    		else
+    			negatives++;
     	}
+    	cout << "Accepted " << positives << ", rejected " << negatives << " plates." << endl;
     }
 }

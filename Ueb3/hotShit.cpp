@@ -35,7 +35,7 @@ void tightPreprocessing(cv::Mat &img, bool live){
    // double thresh = 80;
 
 	//static img params
-	uchar in_min=180;
+	uchar in_min=140;
 	uchar in_max=255;
 	double gamma=1;
 	uchar out_min=0;
@@ -73,7 +73,7 @@ void tightPreprocessing(cv::Mat &img, bool live){
    }
 }
 
-void hardSegmentation(cv::Mat &input, std::vector<cv::Point2f> &output){
+void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output){
 // 	//Testing code
 //  	 if(false){
 // 		float rein = 1;
@@ -316,7 +316,7 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
     cv::warpPerspective(croppedImg, res, trans, res.size());
     
     if(debug) showScaled(transformedStr, res);
-    
+
     return res.clone();
 }
 

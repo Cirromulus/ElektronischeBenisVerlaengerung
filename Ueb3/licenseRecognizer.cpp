@@ -23,9 +23,9 @@ int pipelineDetect(Mat &img, bool live = false){
     a = getTickCount();
     Mat first = img.clone();
     cvtColor(first, first, CV_BGR2GRAY);
-    tightPreprocessing(img, live);
+    Preprocessing(img, live);
     b = getTickCount();
-    hardSegmentation(img, plateOutline);
+    findPlates(img, plateOutline);
     c = getTickCount();
     Mat plateImg = phatPerspectiveNormalizer(first, plateOutline);
     d = getTickCount();
@@ -98,13 +98,13 @@ bool imagePath(string path){
 	if(plateId >= 0){
 	   cout << "Found Plate " << string(knownPlates[plateId]) << endl;
 	   if(debug){
-		  drawImgBorder(display, 1);
+		  drawImgBorder(display, 1); //add green border to main display
 		  showScaled(windowname, display);
 	   }
 	}else{
 	   cout << "No known Plate found." << endl;
 	   if(debug){
-		   drawImgBorder(display, 0);
+		   drawImgBorder(display, 0); //add red border to main display
 		   showScaled(windowname, display);
 	   }
 	}

@@ -9,7 +9,7 @@
 
 #include "opencv2/features2d/features2d.hpp"
 
-void tightPreprocessing(cv::Mat &img, bool live = false);
+void Preprocessing(cv::Mat &img, bool live = false);
 
 //Struct for storing Point and accumulated distance to origin
 struct accDistanceAndPoint{
@@ -22,7 +22,7 @@ struct accDistanceAndPoint{
 	}
 };
 
-void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output);
+void findPlates(cv::Mat input, std::vector<cv::Point2f> &output);
 
 cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline);
 

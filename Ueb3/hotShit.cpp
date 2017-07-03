@@ -27,38 +27,42 @@ using namespace std;
 using namespace  cv;
 
 
-
-
-
-void tightPreprocessing(cv::Mat &img, bool live){
-    cvtColor(img, img, COLOR_RGB2GRAY);
+/**
+ * @brief adjusts brightness, gamma and contrast of input image for further usage in subsequent functions
+ *
+ * @param &img 			reference to input image
+ * @param live bool 	true if programm is running in live mode receiving images from connected camera
+ * 						false it progrmm is running on static images
+ */
+void Preprocessing(cv::Mat &img, bool live){
+	// convert input image to grey
+	cvtColor(img, img, COLOR_RGB2GRAY);
     if (debug) imshow("Greyscale (input)", img);
-
-	// Set threshold and maxValue
-   // double thresh = 80;
 
 	//static img params
 	uchar in_min=160;
 	uchar in_max=255;
-	double gamma=1.1;
+	double gamma=1.8;
 	uchar out_min=1;
 	uchar out_max=254;
 
     if(live){
-		//Live optimized params
-		in_min= 130;
+		//params optimized for live camera
+    	in_min= 130;
 		in_max= 255;
 		gamma = 0.5;
 		out_min=0;
 		out_max=255;
     }
 
-    double pixel = 0;
+    double pixel = 0; //initialize intensity value for pixel
 
-    //Note: color correction algorithm inspired by [https://pippin.gimp.org/image-processing/chap_point.html]
+    	//Note: color correction algorithm inspired by [https://pippin.gimp.org/image-processing/chap_point.html]
+    //for every pixel in img:
     for( int y = 0; y < img.rows; y++ )
        { for( int x = 0; x < img.cols; x++ )
             {
+    	   	   	  // get pixel vale
     	   	   	pixel = img.at<uchar>(y,x);
     	   	   	  // normalize
 				pixel = (pixel-in_min) / (in_max-in_min);
@@ -66,50 +70,28 @@ void tightPreprocessing(cv::Mat &img, bool live){
 				pixel= (pixel > 0) ? pow(pixel,gamma) : 0;
 				  //rescale range and round correctly
 				pixel = floor((pixel * (out_max-out_min) + out_min)+0.5);
+				  // set new pixel intensity
     	   	    img.at<uchar>(y,x) = saturate_cast <uchar> (pixel);
               }
        }
-    //equalizeHist( new_image, new_image );
 
+    //show preprocessed image if in debug mode
    if (debug){
 	   imshow( "Preprocessed image", img);
    }
 }
 
-void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output){
-// 	//Testing code
-//  	 if(false){
-// 		float rein = 1;
-// 		output.push_back(Point2f(rein,rein));
-// 		output.push_back(Point2f(input.size().width-rein,rein));
-// 		output.push_back(Point2f(input.size()) - Point2f(rein, rein));
-// 		output.push_back(Point2f(rein,input.size().height - rein));
-// 	}else{
-// 		if(true){
-// 			//Img 1969
-// 			output.push_back(Point2f(240,213));
-// 			output.push_back(Point2f(680,196));
-// 			output.push_back(Point2f(676,285));
-// 			output.push_back(Point2f(246,315));
-// 		}else{
-// 			//Img 1962
-// 			output.push_back(Point2f(195,216));
-// 			output.push_back(Point2f(300,213));
-// 			output.push_back(Point2f(300,309));
-// 			output.push_back(Point2f(200,314));
-// 		}
-// // 		float weg = 10;
-// // 		output[0] += Point2f(-weg, -weg);
-// // 		output[1] += Point2f( weg, -weg);
-// // 		output[2] += Point2f( weg,  weg);
-// // 		output[3] += Point2f(-weg,  weg);
-//     return;
-// 	}
-	
+/**
+ * @brief adjusts brightness, gamma and contrast of input image for further usage in subsequent functions
+ *
+ * @param input		input image
+ * @param output 	vector of Points(float) for output of found plate corners.
+ * 					Point order: top_left, top_right, bottom_right, bottom_left
+ */
+void findPlates(cv::Mat input, std::vector<cv::Point2f> &output){
 
-	int edgeThresh_lower = 100;
-	RNG rng(12345);
-	Mat edge, cedge, im_flood, im_contours;
+	int edgeThresh_lower = 100; //lower threshold for Canny edge detection algorithm
+	Mat edge, cedge, im_contours; //initialize Mats for c
 	vector<vector<Point>> foundContours;
 	vector<vector<Point>> foundConvexHulls;
 	vector<vector<Point>> filteredContours;
@@ -203,6 +185,7 @@ void hardSegmentation(cv::Mat input, std::vector<cv::Point2f> &output){
 
 		    namedWindow("Edge map", 1);
 		    namedWindow("contours",1);
+		    RNG rng(12345);	//random number generator for random colors
 
 			//show points of found contour after simplification to only 4 points
 			cout << "largest contour after approximation: " << largest_contour[0] << endl;

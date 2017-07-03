@@ -21,7 +21,7 @@
 #include <vector>
 #include <climits>
 
-#define BORDER plateHeight / 20
+#define BORDER (plateHeight / 20)
 
 using namespace std;
 using namespace  cv;
@@ -42,7 +42,7 @@ void Preprocessing(cv::Mat &img, bool live){
 	//static img params
 	uchar in_min=160;
 	uchar in_max=255;
-	double gamma=1.8;
+	double gamma=1.1;
 	uchar out_min=1;
 	uchar out_max=254;
 

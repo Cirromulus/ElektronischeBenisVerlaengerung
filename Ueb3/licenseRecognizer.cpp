@@ -35,7 +35,7 @@ int pipelineDetect(Mat &img, bool live = false){
             Size( 2*erosion_size + 1, 2*erosion_size+1 ),
             Point( erosion_size, erosion_size ) ));
     erode(plateImg, plateImg, getStructuringElement( MORPH_ELLIPSE,
-            Size( 2*erosion_size + 2, 2*erosion_size+2 ),
+            Size( 2*erosion_size + 1, 2*erosion_size+1 ),
             Point( erosion_size, erosion_size ) ));
     int res = megaPlateRecognisificationessing(plateImg);
 

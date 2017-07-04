@@ -24,6 +24,10 @@ Hier wird entschieden, ob die Bildverarbeitung auf statische Bilddateien oder au
 Die Funktionen \texttt{imagePath()} und \texttt{camPath()} sind jeweils dazu da, die verschiedenen Quellen einzulesen und durch \texttt{pipelineDetect()} analysieren zu lassen. Die Bilderkennung ist in logische Abschnitte unterteilt, die jeweils in der Funktion \texttt{pipelineDetect()} angewandt werden.\\
 Zuerst wird das Bild durch \texttt{preprocessing()} vorverarbeitet (siehe Kapitel \ref{prepro}). Dieses Bild wird dann durch \texttt{findPlates()} (Kapitel \ref{findpl}) analysiert, und Eckpunkte des erkannten Nummernschildes in das \texttt{deWarp()} (Kapitel \ref{dewarp}) geliefert. Dieses beschneidet und entzerrt das Originalbild zu einem Ausschnitt. Daraufhin wird es durch ein klassisches \texttt{dilate()} und \texttt{erode()} von kleineren Flecken befreit. In Funktion \texttt{plateRecog()} wird dieser Ausschnitt dann der Texterkennung \texttt{customOCR::ocr()} übergeben, welches alle erkannten Wörter bzw. Buchstaben zurückliefert (siehe Kapitel \ref{lookupPlate}), und anschließend werden die gefundenen Buchstaben mit bekannten Nummernschildern verglichen. Ist ein bekanntes dabei, wird die entsprechende ID zurückgegeben, und ggfs. eine zugeordnete Funktion ausgeführt (bspw. Tor öffnen).
 
+\subsection{Anmerkung}
+\textit{Um die beigefügten Programmdateien ausführen oder kompilieren zu können, muss die OCR-Bibliothek tesseract zunächst installiert werden. Eine Anleitung dazu findet sich in ./Readme.txt.
+}
+
 \subsection{cropImage}
 Diese ursprünglich geplante Methode wird nicht mehr benötigt. Die Bilder sind im Urzustand nicht so groß wie befürchtet. Ein weiterer Vorteil ist, dass der auswertbare Bildbereich nicht von Anfang an beschnitten wird. Dies gibt später mehr Spielraum für die Positionierung der Fahrzeuge.
 \subsection{preprocessing}
@@ -99,7 +103,9 @@ Die Fälle F-J wurden für das Fahrzeug HB XY-84 erstellt. Hierbei gab es die we
 
 Die Fälle K-O gehören zum Fahrzeug HB TI-326. Hier besteht die zusätzliche Schwierigkeit darin, dass das Fahrzeug durch eine längere Autobahnfahrt ein mit Insekten verschmutztes Kennzeichen hat.
 
-Ein Problem bei der Erkennung mit der "tesseract" Bibliothek war, dass die Schriftart von Kennzeichen (FE-Schrift) dafür entwickelt wurde, dass diese nicht verfälscht werden können (Beispielsweise 3 zu 8). Diese sehr spezielle Schriftart wird deshalb allerdings standardmäßig von der Bibliothek nicht besonders gut erkannt. Da ein Anlernen der Schriftart sehr zeitintensiv ist, haben wir uns für unseren Test darauf beschränkt, in der Kennzeichenüberprüfung ähnliche Buchstaben, z.B. V anstelle von Y, gleichzustellen.
+Ein Problem bei der Erkennung mit der "tesseract" Bibliothek war, dass die Schriftart von Kennzeichen (FE-Schrift) dafür entwickelt wurde, dass diese nicht verfälscht werden können (Beispielsweise 3 zu 8). Diese sehr spezielle Schriftart wird deshalb allerdings standardmäßig von der Bibliothek nicht besonders gut erkannt. Da ein Anlernen der Schriftart sehr zeitintensiv ist, haben wir uns für unseren Test darauf beschränkt, in der Kennzeichenüberprüfung ähnliche Buchstaben, z.B. V anstelle von Y, gleichzustellen.\\
+
+\textit{\textbf{Anmerkung}: Aufgrund der Größenbeschränkung für Uploads sind in der aktuellen Abgabe nicht alle Bilder für alle genannten Testfälle enthalten, können aber auf Nachfrage gerne zur Verfügung gestellt werden.}
 
 \subsection{Ergebnis}
 Es hat sich gezeigt, dass in jedem Anfahrtsszenario mindestens ein Bild erkannt wurde. Bei den einfachen Fällen A-E wurde in der Regel sogar auf fast allen Bilder das Kennzeichen richtig erkannt.

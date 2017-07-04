@@ -82,7 +82,7 @@ void preprocessing(cv::Mat &img, bool live){
 }
 
 /**
- * @brief adjusts brightness, gamma and contrast of input image for further usage in subsequent functions
+ * @brief find contour of plate in input image and output the 4 corresponding corner points in correct order
  *
  * @param input		input image
  * @param output 	vector of Points(float) for output of found plate corners.

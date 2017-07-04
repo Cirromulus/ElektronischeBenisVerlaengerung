@@ -24,23 +24,30 @@ Hier wird entschieden, ob die Bildverarbeitung auf eine Reihe von Bilddateien od
 Die Funktionen \texttt{imagePath()} und \texttt{camPath()} sind jeweils dazu da, die verschiedenen Quellen einzulesen und durch \texttt{pipelineDetect()} analysieren zu lassen. Die Bilderkennung ist in logische Abschnitte unterteilt, die jeweils in der Funktion \texttt{pipelineDetect()} angewandt werden.\\
 Zuerst wird das Bild durch \texttt{preprocessing()} vorverarbeitet (siehe Kapitel \ref{prepro}). Dieses Bild wird dann durch \texttt{findPlates()} (Kapitel \ref{findpl}) analysiert, und Eckpunkte des erkannten Nummernschildes in das \texttt{deWarp()} (Kapitel \ref{dewarp}) geliefert. Dieses beschneidet und entzerrt das Originalbild zu einem Ausschnitt. Daraufhin wird es durch ein klassisches \texttt{dilate()} und \texttt{erode()} von kleineren Flecken befreit. In Funktion \texttt{plateRecog()} wird dieser Ausschnitt dann der Texterkennung \texttt{customOCR::ocr()} übergeben, welches alle erkannten Wörter bzw. Buchstaben zurückliefert (siehe Kapitel \ref{lookupPlate}), und anschließend die gefundenen Buchstaben mit bekannten Nummernschildern verglichen. Ist ein bekanntes dabei, wird die entsprechende ID zurückgegeben.
 
-\subsection{CropImage}
-Die Methode wird nicht mehr Benötigt. Die Bilder sind im Urzustand nicht so groß wie befürchtet. Ein weiterer Vorteil ist, dass der Auswertbare Bildbereich nicht von Anfang an beschnitten wird. Dies gibt Später mehr Spielraum für die Positionierung der Fahrzeuge.
-\subsection{Preprocessing}
+\subsection{cropImage}
+Die Methode wird nicht mehr benötigt. Die Bilder sind im Urzustand nicht so groß wie befürchtet. Ein weiterer Vorteil ist, dass der auswertbare Bildbereich nicht von Anfang an beschnitten wird. Dies gibt später mehr Spielraum für die Positionierung der Fahrzeuge.
+\subsection{preprocessing}
 \label{prepro}
-Dunkel abschneiden.
-\#L
+Zu Beginn der Bildverarbeitung wird die Funktion \texttt{preprocessing()} aufgerufen, um eine Anpassung der Farbinformationen und des Kontrastes vorzunehmen, um für die Kennzeichenerkennung irrelevante Informationen so gut wie möglich aus dem Bild zu entfernen.
+Insbesondere werden alle Grauwerte, die gewöhnlich nicht zum Nummernschild gehören durch die Verarbeitung ins Schwarze gezogen, während die helleren Bildbereiche weiter erhellt werden. Dadurch wird das Nummernschild so gut wie möglich isoliert. Die Parameter für Kontrast-, Gamma-  und Helligkeitsanpassung wurden anhand der vorhandenen Testbilder empirisch ermittelt und müssen dementsprechend bei Verwendung des Systems in anderem Aufbau an die Verhältnisse angepasst werden.\\
 
-\subsection{DetectLines}
-Wir holen keine Linien, weil das zu vielen Fehlerkennungen geführt hat.
-\#L
+\lstinputlisting[firstnumber=30, firstline=30, lastline=82]{hotShit.cpp}
+
+
+\subsection{detectLines}
+Die ursprünglich geplante Funktion \texttt{findLines} wurde während der Implementationsphase in die Funktion \texttt{findPlates} übernommen. 
+
 \subsection{findPlates}
 \label{findpl}
-Canny, contour, convex, nach Fläche sortieren, approx poly vereinfachen.
-\#L
+
+Nach erfolgter Vorverarbeitung durch \texttt{preprocessing()} erfolgt die Extraktion der Kennzeichenkontur in \texttt{findPlates()}. Dazu werden zunächst die Kanten im Bild durch die Verwendung des Canny-Algorithmus gefunden und mithilfe von \texttt{findContours()} in relevante Konturen umgewandelt. Zu jeder gefundenen Kontur wird die konvexe Hülle berechnet, um zusammenhängende Konturen zu erhalten und etwaige Unterbrechungen und Einschlüsse zu eliminieren. Anschließend erfolgt eine Vereinfachung jeder konvexen Hülle mithilfe des \texttt{approxPolyDP()} Algorithmus, welcher die Anzahl der Eckpunkte des die Hülle darstellenden Polygons mithilfe von Approximation reduziert (genauere Informationen in \cite{opCV14}). Die vereinfachten Konturen werden im Anschluss nach der Größe ihrer Fläche verglichen, um die größte Kontur zu finden, welche grundsätzlich für das Nummernschild gehalten wird. Falls diese Kontur nach der ersten Approximation noch nicht über exakt vier Eckpunkte verfügt, wird sie zyklisch weiter vereinfacht, bis dieses Kriterium erfüllt ist. Abschließend werden die so gewonnenen Eckpunkte in die für die weitere Verarbeitung richtige Reihenfolge gebracht un ausgegeben.
+
+\lstinputlisting[firstnumber=84, firstline=84, lastline=223]{hotShit.cpp}
+
+
 \subsection{cropPlate}
 \label{croppl}
-Diese funktion haben wurde an den Anfang von deWarp ausgelagert und sieht folgendermaßen aus:\\
+Diese Funktion haben wurde an den Anfang von deWarp ausgelagert und sieht folgendermaßen aus:\\
 \lstinputlisting[firstnumber=224, firstline=224, lastline=310]{hotShit.cpp}
 Zuerst werden Fehlerfälle aussortiert und zwei Debug-Fenster initialisiert. Ab Zeile 240 beginnt das eigentliche Croppen. \\
 Zuerst werden die minimalen x- und y-Werte ermittelt und dann aus diesen ein Rechteck von den jeweiligen Minima bis Maxima aufgespannt. Dieses wird dann in Zeile 251 zum Croppen des Bildes genutzt.\\
@@ -106,6 +113,17 @@ Eine Weitere Verbesserung wäre es, eine Kamera mit Infrarotfilter einzusetzen u
 
 \section{Zeitverbrauch}
 Wir haben an dem Projekt ungefähr 120 Mannstunden investiert.
+
+\begin{thebibliography}{9}
+	
+	\bibitem{opCV14}
+	OpenCV Documentation,
+	\emph{Structural analysis and shpe descriptors - approxPolyDP(...)},
+	\url{http://docs.opencv.org/2.4/modules/imgproc/doc/structural_analysis_and_shape_descriptors.html#approxpolydp},
+	abgerufen am 01.07.2017, 17:30 Uhr.
+	
+\end{thebibliography}
+
 \end{document}
 
 

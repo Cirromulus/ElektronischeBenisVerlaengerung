@@ -39,7 +39,7 @@ int pipelineDetect(Mat &img, bool live = false){
     erode(plateImg, plateImg, getStructuringElement( MORPH_ELLIPSE,
             Size( 2*erosion_size + 1, 2*erosion_size+1 ),
             Point( erosion_size, erosion_size ) ));
-    int res = megaPlateRecognisificationessing(plateImg);
+    int res = lookupPlate(plateImg);
 
     e = getTickCount();
     if(debug) cout << 

@@ -55,12 +55,15 @@ Schlussendlich wird noch als Hilfestellung für die Texterkennung ein weißer Ra
 
 \subsection{getText}
 Implementiert in Klasse \texttt{CustomOCR} und \texttt{LexiconOCR}.
-Findet Text mit tesseract.
+Die Klasse \texttt{LexiconOCR} war ein erster Versuch, einzelne Wörter zu erkennen. Dies hat nicht zufriedenstellend funktioniert, da pro Bild nur ein Wort erwartet wurde. Daher wird hier auch keine Dokumentation dazu erstellt.
+\texttt{CustomOCR} ist eine Klasse, die an das Beispiel von OpenCV's Texterkennungsbeispiel angelehnt ist. Von dort sind auch die \textit{ER-Groupings}, die das trainierte Neuronale Netz für die Buchstabensegmentierung und -Erkennung beinhalten. Die \texttt{CustomOCR::ocr()} Funktion wurde weiterhin effizienter gestaltet, sowie im Vorhinein bekannte Elemente wie die \textit{ER-Filter} in den Konstruktor umgelagert, um die Ausführzeit weiter zu verringern.
+
 \lstinputlisting[firstnumber=19,firstline=19,lastline=140]{ocrBackend.cpp}
 
 \subsection{lookupPlate}
 \label{lookupPlate}
-Sucht nach definierten Kennzeichen in erkanntem Text. Nicht besonders Effizient.
+Diese Funktion sucht nach definierten Kennzeichen in erkanntem Text. Sie ist nicht besonders effizient implementiert, funktioniert aber schnell genug.\\
+Jeder gefundene Textabsatz wird überprüft, ob von einem der definierten Nummernschilder alle Elemente enthalten sind. Wenn alle vorhanden sind, ist das Kennzeichen offiziell erkannt. Da die Texterkennung mit einer anderen Schriftart angelernt wurde, und die Kennzeichenschrift in einigen Buchstaben sehr eigen ist (um die Fälschung zu erschweren), sind Buchstaben wie \texttt{Y} und \texttt{V} sowie \texttt{I}, \texttt{1} und \texttt{l} häufig verwechselt. Da es sich bei dem System nicht um eine sicherheitsrelevante Anwendung handelt, wurden für die Tests auch die verwandten Buchstaben erlaubt (siehe Datei \texttt{knownPlates.hpp}).
 \lstinputlisting[firstnumber=309,firstline=309,lastline=353]{hotShit.cpp}
 
 \section{Ergebnisse}
@@ -89,7 +92,7 @@ Debugausgaben einzelner erkannten Kennzeichen sind exemplarisch in Abb. \ref{bei
 \begin{figure}[htp]
 	\centering 	
 	\includegraphics[width=.9\textwidth]{Funktioniert_1975.png} 
-	\caption{Beispielbild: Abstand $d=1m$, Winkel $\alpha = 20^\circ$ \label{beispiel2}}
+	\caption{Erkennung Beispielbild: Abstand $d=1m$, Winkel $\alpha = 20^\circ$ \label{beispiel2}}
 \end{figure}
 
 

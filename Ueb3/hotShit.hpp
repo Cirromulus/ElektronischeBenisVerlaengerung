@@ -9,7 +9,7 @@
 
 #include "opencv2/features2d/features2d.hpp"
 
-void Preprocessing(cv::Mat &img, bool live = false);
+void preprocessing(cv::Mat &img, bool live = false);
 
 //Struct for storing Point and accumulated distance to origin
 struct accDistanceAndPoint{
@@ -24,9 +24,9 @@ struct accDistanceAndPoint{
 
 void findPlates(cv::Mat input, std::vector<cv::Point2f> &output);
 
-cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline);
+cv::Mat deWarp(cv::Mat &input, std::vector<cv::Point2f> &outline);
 
 /**
  * @return true, if plate is one of the known plates
  */
-int megaPlateRecognisificationessing(cv::Mat &input);
+int lookupPlate(cv::Mat &input);

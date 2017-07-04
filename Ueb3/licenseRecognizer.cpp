@@ -21,15 +21,17 @@ int pipelineDetect(Mat &img, bool live = false){
     vector<Point2f> plateOutline;
     double a,b,c,d,e;
     a = getTickCount();
-    Mat first = img.clone();
-    cvtColor(first, first, CV_BGR2GRAY);
-    Preprocessing(img, live);
+    Mat original = img.clone();
+    cvtColor(original, original, CV_BGR2GRAY);
+    preprocessing(img, live);
     b = getTickCount();
     findPlates(img, plateOutline);
     c = getTickCount();
-    Mat plateImg = phatPerspectiveNormalizer(first, plateOutline);
+    Mat plateImg = deWarp(original, plateOutline);
     d = getTickCount();
-
+	
+	//Small processing on warped original plate sector 
+	//to minimize "grain speckles" (Flies and Dirt on Plate)
     int erosion_size = 2;
     dilate(plateImg, plateImg, getStructuringElement( MORPH_ELLIPSE,
             Size( 2*erosion_size + 1, 2*erosion_size+1 ),
@@ -40,11 +42,11 @@ int pipelineDetect(Mat &img, bool live = false){
     int res = megaPlateRecognisificationessing(plateImg);
 
     e = getTickCount();
-    if(debug) cout << "\r"
-    		"Prepros: " << (int)((b-a)*1000/getTickFrequency()) << "ms, "
-    		"segment: " << (int)((c-b)*1000/getTickFrequency()) << "ms, "
-			"perspec: " << (int)((d-c)*1000/getTickFrequency()) << "ms, "
-			"recogni: " << (int)((e-d)*1000/getTickFrequency()) << "ms";
+    if(debug) cout << 
+			"Prepros: " << (b-a)*1000/getTickFrequency() << "ms, "
+    		"segment: " << (c-b)*1000/getTickFrequency() << "ms, "
+			"perspec: " << (d-c)*1000/getTickFrequency() << "ms, "
+			"recogni: " << (e-d)*1000/getTickFrequency() << "ms\n";
     fflush(stdout);
     return res;
 }

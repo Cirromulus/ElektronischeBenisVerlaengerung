@@ -34,7 +34,7 @@ using namespace  cv;
  * @param live bool 	true if programm is running in live mode receiving images from connected camera
  * 						false it progrmm is running on static images
  */
-void Preprocessing(cv::Mat &img, bool live){
+void preprocessing(cv::Mat &img, bool live){
 	// convert input image to grey
 	cvtColor(img, img, COLOR_RGB2GRAY);
     if (debug) imshow("Greyscale (input)", img);
@@ -221,7 +221,7 @@ void findPlates(cv::Mat input, std::vector<cv::Point2f> &output){
 
 
 //Also would crop image
-cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outline){
+cv::Mat deWarp(cv::Mat &input, std::vector<cv::Point2f> &outline){
     if(outline.size() != 4){
 		if(debug) cout << "Outline has " << outline.size() << " edges. Skipping Perspective Warp." << endl;
 		return input;
@@ -307,9 +307,9 @@ cv::Mat phatPerspectiveNormalizer(cv::Mat &input, std::vector<cv::Point2f> &outl
 }
 
 /**
- * @return true, if plate is one of the known plates
+ * @return >= 0 if plate is one of the known plates
  */
-int megaPlateRecognisificationessing(cv::Mat &input){
+int lookupPlate(cv::Mat &input){
 	static CustomOCR customOcr;
 	//static LexiconOCR customOcr;
 

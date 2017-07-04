@@ -9,6 +9,7 @@
 \graphicspath{ {Bilder/Doku/} }
 
 \setcounter{section}{3}
+\setcounter{secnumdepth}{3}
 
 \begin{document}
 \fach{Echtzeitbildverarbeitung}
@@ -17,36 +18,45 @@
 \semester{SoSe17}
 \blatt{Udo Frese}{Lukas Bertram}{(lbertram@uni-bremen.de)}{Sebastian Bliefert}{(bliefert@uni-bremen.de)}{Johannes Hochbein}{(hochbein@uni-bremen.de)}{Pascal Pieper}{(ppieper@uni-bremen.de)}
 
-
 \section{Die Idee}
-Erklärung des Frameworks, Abfolge der GROBEN Algos
-\#P
+Es wurde ein eigenes Framework geschrieben, um die verschiedenen Anwendungsgebiete effizient abdecken zu können. In der Datei \texttt{licenseRecognizer.cpp} ist die Hauptroutine implementiert.
+Hier wird entschieden, ob die Bildverarbeitung auf eine Reihe von Bilddateien oder auf den kontinuierlichen Bildern einer angeschlossenen Kamera angewandt werden soll.
+Die Funktionen \texttt{imagePath()} und \texttt{camPath()} sind jeweils dazu da, die verschiedenen Quellen einzulesen und durch \texttt{pipelineDetect()} analysieren zu lassen. Die Bilderkennung ist in logische Abschnitte unterteilt, die jeweils in der Funktion \texttt{pipelineDetect()} angewandt werden.\\
+Zuerst wird das Bild durch \texttt{preprocessing()} vorverarbeitet (siehe Kapitel \ref{prepro}). Dieses Bild wird dann durch \texttt{findPlates()} (Kapitel \ref{findpl}) analysiert, und Eckpunkte des erkannten Nummernschildes in das \texttt{deWarp()} (Kapitel \ref{dewarp}) geliefert. Dieses beschneidet und entzerrt das Originalbild zu einem Ausschnitt. Daraufhin wird es durch ein klassisches \texttt{dilate()} und \texttt{erode()} von kleineren Flecken befreit. In Funktion \texttt{plateRecog()} wird dieser Ausschnitt dann der Texterkennung \texttt{customOCR::ocr()} übergeben, welches alle erkannten Wörter bzw. Buchstaben zurückliefert (siehe Kapitel \ref{lookupPlate}), und anschließend die gefundenen Buchstaben mit bekannten Nummernschildern verglichen. Ist ein bekanntes dabei, wird die entsprechende ID zurückgegeben.
+
 \subsection{CropImage}
 Die Methode wird nicht mehr Benötigt. Die Bilder sind im Urzustand nicht so groß wie befürchtet. Ein weiterer Vorteil ist, dass der Auswertbare Bildbereich nicht von Anfang an beschnitten wird. Dies gibt Später mehr Spielraum für die Positionierung der Fahrzeuge.
 \subsection{Preprocessing}
+\label{prepro}
 Dunkel abschneiden.
 \#L
 
 \subsection{DetectLines}
-Wir holen keine Linien, weil das zu zu vielen Fehlerkennungen geführt hat.
+Wir holen keine Linien, weil das zu vielen Fehlerkennungen geführt hat.
 \#L
 \subsection{findPlates}
+\label{findpl}
 Canny, contour, convex, nach Fläche sortieren, approx poly vereinfachen.
 \#L
 \subsection{cropPlate}
-Crops.
+Crops. Passiert in deWarp.
 \$B
 \subsection{deWarp}
+\label{dewarp}
 Warps. Wurst.
 \$B
 \subsection{getText}
+Implementiert in Klasse \texttt{CustomOCR} und \texttt{LexiconOCR}.
 Findet Text mit tesseract.
-\#P
+\lstinputlisting[firstnumber=19,firstline=19,lastline=140]{ocrBackend.cpp}
+
 \subsection{lookupPlate}
-Sucht nach definierten Kennzeichen in erkanntem Text.
-\#P
+\label{lookupPlate}
+Sucht nach definierten Kennzeichen in erkanntem Text. Nicht besonders Effizient.
+\lstinputlisting[firstnumber=309,firstline=309,lastline=353]{hotShit.cpp}
+
 \section{Ergebnisse}
-\textbf{Testbedingungen} \\
+\subsection{Testbedingungen}
 Für den Test unserer Nummernschilderkennung haben wir verschiedene „Fälle“ generiert. Jeder Fall soll hierbei ein Beispiel eines sich dem Tor nähernden Fahrzeugs sein. So zeigt der Fall „A“ das Fahrzeug HB TQ-883 welches sich ohne Winkel der Kamera nähert. Die Verschieden Bilder sollen hierbei den Zeitlichen Verlauf des heran Fahrens darstellen. Es würde ausreichen, wenn auf einem der Bilder das Kennzeichen erkannt wird, da somit das Tor geöffnet werden würde während sich das Fahrzeug nähert. Da Fahrzeuge nicht immer gleich fahren, haben wir weitere Fälle erstellt, bei denen das Fahrzeug jeweils einen Winkel zur Kamera hat, sodass diese nicht Frontal auf das Kennzeichen schaut. Auch hier nähert sich das Fahrzeug mit jedem Bild wieder an die Kamera an (mit gleichbleibenden Winkel). Für jede Winkeländerung wurde ein neuer Fall erstellt.
 Sodass die Fälle A-E alle zum gleichen Fahrzeug gehören aber unterschiedliche Anfahrten darstellen.
 
@@ -56,20 +66,31 @@ Die Fälle F-J wurden für das Fahrzeug HB XY-84 erstellt. Hierbei gab es die we
 
 Die Fälle K-O gehören zum Fahrzeug HB TI-326. Hier besteht die zusätzliche Schwierigkeit darin, dass das Fahrzeug durch eine längere Autobahnfahrt ein mit Insekten verschmutztes Kennzeichen hat.
 
-Ein Problem bei der Erkennung mit Tesseract war, dass die Schriftart von Kennzeichen (FE-Schrift)  dafür entwickelt wurde, dass diese nicht Verfälscht werden können (Beispielsweise 3 zu 8). Diese sehr spezielle Schriftart wird deshalb allerdings standardmäßig nicht besonders gut erkannt. Da ein Anlernen der Schriftart relativ Zeitintensiv ist, haben wir uns für unseren Test darauf beschränkt auch ähnliche Buchstaben z.B. V an stelle von Y zu zu lassen.
+Ein Problem bei der Erkennung mit Tesseract war, dass die Schriftart von Kennzeichen (FE-Schrift)  dafür entwickelt wurde, dass diese nicht Verfälscht werden können (Beispielsweise 3 zu 8). Diese sehr spezielle Schriftart wird deshalb allerdings standardmäßig nicht besonders gut erkannt. Da ein Anlernen der Schriftart relativ Zeitintensiv ist, haben wir uns für unseren Test darauf beschränkt, in der Kennzeichenüberprüfung ähnliche Buchstaben, z.B. V anstelle von Y, gleichzustellen.
 
-\textbf{Ergebnis} \\
+\subsection{Ergebnis}
 Es hat sich gezeigt, dass in jedem Fall mindestens ein Bild erkannt wurde. Bei den einfachen Fällen A-E wurde in der Regel sogar auf fast allen Bilder das Kennzeichen richtig erkannt. Das Ergebnis Aller Tests ist in Bild 1 zu sehen.
+Debugausgaben einzelner erkannten Kennzeichen sind exemplarisch in Abb. \ref{beispiel} und Abb. \ref{beispiel2} dargestellt.
 
-Das Ergebnis eines einzelnen erkannten Kennzeichens ist exemplarisch in Bild 2 dargestellt.
+\begin{figure}[htp]
+	\centering 	
+	\includegraphics[width=.9\textwidth]{Funktioniert_1962.png} 
+	\caption{Erkennung Beispielbild: Abstand $d=1m$, Winkel $\alpha = 0^\circ$ \label{beispiel}}
+\end{figure}
+
+\begin{figure}[htp]
+	\centering 	
+	\includegraphics[width=.9\textwidth]{Funktioniert_1975.png} 
+	\caption{Beispielbild: Abstand $d=1m$, Winkel $\alpha = 20^\circ$ \label{beispiel2}}
+\end{figure}
 
 
-\textbf{Bewertung} \\
+\subsection{Bewertung}
 Es hat sich gezeigt, dass die von uns erstellte Kennzeichenerkennung bereits sehr gute Ergebnisse liefert insbesondere, da in der Realität ein Videostream von den heranfahrenden Fahrzeug vorhanden ist, sodass bei einer Geschwindigkeit von 10-30 Bildern/Sekunde eine deutlich größere Anzahl von Bildern zur Verfügung steht. Außerdem konnte bei Tests mit einer Webcam bereits beobachtet werden, dass falsch erkannte Buchstaben häufig „Springen“ sodass diese temporär auch richtig erkannt wurden. 
 
 Dies zeigt allerdings auch, dass dieses System nicht für Sicherheitsrelevante Zugänge geeignet ist, sondern rein der Erhöhung des Komforts dienen sollte. Eine Öffnung durch Fehlerkennung oder Manipulation durch einen Ausdruck eines Kennzeichens können nicht ausgeschlossen werden.
 \section{Ausblick}
-Als Ausblick für eine zukünftige Verbesserung möchten wir die Möglichkeit nennen, die Schriftart der Kennzeichen an zu lernen, sodass Fehlerkennungen deutlich seltener vorkommen sollten.
+Als Ausblick für eine zukünftige Verbesserung möchten wir die Möglichkeit nennen, die Schriftart der Kennzeichen anzulernen, sodass Fehlerkennungen deutlich seltener vorkommen sollten.
 Eine Weitere Verbesserung wäre es, eine Kamera mit Infrarotfilter einzusetzen und die Einfahrt mit Infrarotstrahlern zu beleuchten, dies hätte den Effekt, dass auf den Bildern Hauptsächlich nur noch das Kennzeichen zu sehen ist.
 
 \section{Zeitverbrauch}

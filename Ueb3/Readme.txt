@@ -1,5 +1,5 @@
 How to install OCR-Text.
-apt uninstall libopencv
+apt remove libopencv
 git clone https://github.com/opencv/opencv.git
 cd opencv
 git clone https://github.com/opencv/opencv_contrib.git

@@ -39,12 +39,20 @@ Wir holen keine Linien, weil das zu vielen Fehlerkennungen geführt hat.
 Canny, contour, convex, nach Fläche sortieren, approx poly vereinfachen.
 \#L
 \subsection{cropPlate}
-Crops. Passiert in deWarp.
-\$B
+\label{croppl}
+Diese funktion haben wurde an den Anfang von deWarp ausgelagert und sieht folgendermaßen aus:\\
+\lstinputlisting[firstnumber=224, firstline=224, lastline=310]{hotShit.cpp}
+Zuerst werden Fehlerfälle aussortiert und zwei Debug-Fenster initialisiert. Ab Zeile 240 beginnt das eigentliche Croppen. \\
+Zuerst werden die minimalen x- und y-Werte ermittelt und dann aus diesen ein Rechteck von den jeweiligen Minima bis Maxima aufgespannt. Dieses wird dann in Zeile 251 zum Croppen des Bildes genutzt.\\
+Am Ende wird im debugmodus noch das Ergebnis angezeigt.
 \subsection{deWarp}
 \label{dewarp}
-Warps. Wurst.
-\$B
+Erster Teil des Quellcodes siehe Kapitel \ref{croppl} cropPlate.
+\lstinputlisting[firstnumber=253, firstline=253, lastline=281]{hotShit.cpp}
+Im zweiten Teil der deWarp-Funktion wird erst das Nummernschildformat abgeschätzt. Dazu wird ein Aspect-Ratio-Threshold benutzt, der sich aus der Aspect-Ratio des zweireihigen Nummernschildes ableitet. Anhand dieses Thresholds wird entschieden, ob es sich vermutlich um ein ein- oder zweireihiges Nummernschild handelt.\\
+Nun folgt das eigentliche Warpen. Dazu werden als erstes die Destination-Koordinaten anhand der zuvor ermittelten Nummernschildform festgelegt und die Source-Koordinaten auf das neue (gecroppte) Bild umgerechnet. Dann übernimmt openCV das eigentliche berechnen der Transformationsmatrix und das Warpen selbst.\\
+Schlussendlich wird noch als Hilfestellung für die Texterkennung ein weißer Rahmen um das verarbeitete Nummernschild gezogen und das Ergebnis zurückgegeben.
+
 \subsection{getText}
 Implementiert in Klasse \texttt{CustomOCR} und \texttt{LexiconOCR}.
 Findet Text mit tesseract.

@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 set(SOURCES
  	${CMAKE_CURRENT_SOURCE_DIR}/licenseRecognizer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/helpers.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/hotShit.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/coreFunctions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ocrBackend.cpp
 )
 add_executable( licenseRecog ${SOURCES})

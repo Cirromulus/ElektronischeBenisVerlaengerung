@@ -1,5 +1,5 @@
 /*
- * hotShit.hpp
+ * coreFunctions.hpp
  *
  *  Created on: Jun 20, 2017
  *      Author: rooty

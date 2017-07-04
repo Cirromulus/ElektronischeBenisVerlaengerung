@@ -1,11 +1,11 @@
 /*
- * hotShit.cpp
+ * coreFunctions.cpp
  *
  *  Created on: Jun 20, 2017
  *      Author: rooty
  */
 
-#include "hotShit.hpp"
+#include "coreFunctions.hpp"
 #include "helpers.hpp"
 #include "ocrBackend.hpp"
 #include "knownPlates.hpp"
